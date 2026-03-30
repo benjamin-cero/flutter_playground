@@ -518,10 +518,10 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                 return ListTile(
                   leading: CircleAvatar(
                     backgroundColor: Colors.deepPurple[100],
-                    child: Text(user['name'][0]), // prvo slovo imena
+                    child: Text(user['firstName'][0]), // prvo slovo imena
                   ),
                   title: Text(
-                    user['name'],
+                    '${user['firstName']} ${user['lastName']}',
                     style: TextStyle(
                       fontSize: widget.fontSize,
                       fontWeight: FontWeight.bold,
@@ -545,7 +545,7 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                       builder: (context) => AlertDialog(
                         title: Text('${user['firstName']} ${user['lastName']}'),
                         content: Text(
-                          "Ovo je samo test alerta. \nRadi u odjeljenju: ${user['company']['department']}",
+                          "Radi u odjeljenju: ${user['company']['department']}",
                         ),
                         actions: [
                           TextButton(
