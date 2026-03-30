@@ -657,6 +657,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
   double _fontSize = 16.0;
   ThemeMode _selectedTheme = ThemeMode.light;
+  bool _isLoaded = false;
 
   @override
   void initState() {
@@ -666,12 +667,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadSettings() async {
     _prefs = await SharedPreferences.getInstance();
+    _notificationsEnabled = _prefs.getBool('notifications') ?? true;
+    _fontSize = _prefs.getDouble('fontSize') ?? 16.0;
+    _selectedTheme = _prefs.getBool('isDarkMode') ?? false
+        ? ThemeMode.dark
+        : ThemeMode.light;
     setState(() {
-      _notificationsEnabled = _prefs.getBool('notifications') ?? true;
-      _fontSize = _prefs.getDouble('fontSize') ?? 16.0;
-      _selectedTheme = _prefs.getBool('isDarkMode') ?? false
-          ? ThemeMode.dark
-          : ThemeMode.light;
+      _isLoaded = true;
     });
   }
 
@@ -687,6 +689,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_isLoaded) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
