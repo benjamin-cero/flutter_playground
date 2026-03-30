@@ -18,18 +18,21 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   ThemeMode _themeMode = ThemeMode.system;
+  double _fontSize = 16.0;
 
   @override
   void initState() {
     super.initState();
-    _loadThemeMode();
+    _loadSettings();
   }
 
-  Future<void> _loadThemeMode() async {
+  Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     final isDark = prefs.getBool('isDarkMode') ?? false;
+    final fontSize = prefs.getDouble('fontSize') ?? 16.0;
     setState(() {
       _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+      _fontSize = fontSize;
     });
   }
 
@@ -38,6 +41,14 @@ class _MyAppState extends State<MyApp> {
     await prefs.setBool('isDarkMode', mode == ThemeMode.dark);
     setState(() {
       _themeMode = mode;
+    });
+  }
+
+  Future<void> _changeFontSize(double size) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('fontSize', size);
+    setState(() {
+      _fontSize = size;
     });
   }
 
@@ -54,7 +65,11 @@ class _MyAppState extends State<MyApp> {
       ),
       darkTheme: ThemeData.dark(),
       themeMode: _themeMode,
-      home: MainMenuScreen(onThemeChanged: _changeTheme),
+      home: MainMenuScreen(
+        onThemeChanged: _changeTheme,
+        fontSize: _fontSize,
+        onFontSizeChanged: _changeFontSize,
+      ),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -65,8 +80,15 @@ class _MyAppState extends State<MyApp> {
 // ---------------------------------------------------------
 class MainMenuScreen extends StatefulWidget {
   final Function(ThemeMode) onThemeChanged;
+  final double fontSize;
+  final Function(double) onFontSizeChanged;
 
-  const MainMenuScreen({super.key, required this.onThemeChanged});
+  MainMenuScreen({
+    super.key,
+    required this.onThemeChanged,
+    required this.fontSize,
+    required this.onFontSizeChanged,
+  });
 
   @override
   State<MainMenuScreen> createState() => _MainMenuScreenState();
@@ -75,17 +97,38 @@ class MainMenuScreen extends StatefulWidget {
 class _MainMenuScreenState extends State<MainMenuScreen> {
   int _selectedIndex = 0;
 
-  late final List<Widget> _screens;
+  late List<Widget> _screens;
 
   @override
   void initState() {
     super.initState();
     _screens = [
-      const CounterAppOld(), // moj prvi app
-      const TodoListScreen(), // vjezbao liste
-      const ApiTestScreen(), // ucio HTTP requeste (ubilo me)
-      const AnimationPlayground(), // kul animacije
-      SettingsScreen(onThemeChanged: widget.onThemeChanged), // settings
+      const CounterAppOld(fontSize: 16.0), // moj prvi app
+      const TodoListScreen(fontSize: 16.0), // vjezbao liste
+      const ApiTestScreen(fontSize: 16.0), // ucio HTTP requeste (ubilo me)
+      const AnimationPlayground(fontSize: 16.0), // kul animacije
+      SettingsScreen(
+        onThemeChanged: widget.onThemeChanged,
+        onFontSizeChanged: widget.onFontSizeChanged,
+        fontSize: widget.fontSize,
+      ), // settings
+    ];
+  }
+
+  @override
+  void didUpdateWidget(MainMenuScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Rebuild screens kada se fontSize promijeni
+    _screens = [
+      CounterAppOld(fontSize: widget.fontSize),
+      TodoListScreen(fontSize: widget.fontSize),
+      ApiTestScreen(fontSize: widget.fontSize),
+      AnimationPlayground(fontSize: widget.fontSize),
+      SettingsScreen(
+        onThemeChanged: widget.onThemeChanged,
+        onFontSizeChanged: widget.onFontSizeChanged,
+        fontSize: widget.fontSize,
+      ),
     ];
   }
 
@@ -163,7 +206,9 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 // 1. OLD COUNTER APP (Moja prva aplikacija, ostavio za uspomenu)
 // ---------------------------------------------------------
 class CounterAppOld extends StatefulWidget {
-  const CounterAppOld({super.key});
+  final double fontSize;
+
+  const CounterAppOld({super.key, this.fontSize = 16.0});
 
   @override
   State<CounterAppOld> createState() => _CounterAppOldState();
@@ -221,7 +266,7 @@ class _CounterAppOldState extends State<CounterAppOld> {
                   Text(
                     'Brojac: $brojac',
                     style: TextStyle(
-                      fontSize: 32,
+                      fontSize: widget.fontSize + 12,
                       color: farba,
                       fontWeight: FontWeight.bold,
                     ),
@@ -263,11 +308,12 @@ class _CounterAppOldState extends State<CounterAppOld> {
   }
 }
 
-// ---------------------------------------------------------
 // 2. TODO LIST (Ucenje ListView.builder i Stateful widgeta)
-// ---------------------------------------------------------
+
 class TodoListScreen extends StatefulWidget {
-  const TodoListScreen({super.key});
+  final double fontSize;
+
+  const TodoListScreen({super.key, this.fontSize = 16.0});
 
   @override
   State<TodoListScreen> createState() => _TodoListScreenState();
@@ -366,6 +412,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
                     title: Text(
                       task['title'],
                       style: TextStyle(
+                        fontSize: widget.fontSize,
                         decoration: task['done']
                             ? TextDecoration.lineThrough
                             : TextDecoration.none,
@@ -391,7 +438,9 @@ class _TodoListScreenState extends State<TodoListScreen> {
 // 3. API FETCHING (Radio prosli mjesec - JSONPlaceholder)
 // ---------------------------------------------------------
 class ApiTestScreen extends StatefulWidget {
-  const ApiTestScreen({super.key});
+  final double fontSize;
+
+  const ApiTestScreen({super.key, this.fontSize = 16.0});
 
   @override
   State<ApiTestScreen> createState() => _ApiTestScreenState();
@@ -420,12 +469,12 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
     try {
       // korisim jsonplaceholder jer je besplatan
       final response = await http.get(
-        Uri.parse('https://jsonplaceholder.typicode.com/users'),
+        Uri.parse('https://dummyjson.com/users'),
       );
 
       if (response.statusCode == 200) {
         setState(() {
-          _users = json.decode(response.body); // parsanje JSON-a
+          _users = json.decode(response.body)['users']; // parsanje JSON-a
           _isLoading = false;
         });
       } else {
@@ -473,7 +522,10 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                   ),
                   title: Text(
                     user['name'],
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: widget.fontSize,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -491,9 +543,9 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                     showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: Text(user['name']),
+                        title: Text('${user['firstName']} ${user['lastName']}'),
                         content: Text(
-                          "Ovo je samo test alerta. \nZivi u gradu: ${user['address']['city']}",
+                          "Ovo je samo test alerta. \nRadi u odjeljenju: ${user['company']['department']}",
                         ),
                         actions: [
                           TextButton(
@@ -515,7 +567,9 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
 // 4. ANIMATIONS & UI EXPERIMENTS (Ovo mi je najzabavnije)
 // ---------------------------------------------------------
 class AnimationPlayground extends StatefulWidget {
-  const AnimationPlayground({super.key});
+  final double fontSize;
+
+  const AnimationPlayground({super.key, this.fontSize = 16.0});
 
   @override
   State<AnimationPlayground> createState() => _AnimationPlaygroundState();
@@ -572,7 +626,8 @@ class _AnimationPlaygroundState extends State<AnimationPlayground>
                   alignment: Alignment.center,
                   child: Text(
                     _isExpanded ? 'Klikni me opet!' : 'Klikni me!',
-                    style: const TextStyle(
+                    style: TextStyle(
+                      fontSize: widget.fontSize,
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
@@ -645,8 +700,15 @@ class _AnimationPlaygroundState extends State<AnimationPlayground>
 // ---------------------------------------------------------
 class SettingsScreen extends StatefulWidget {
   final Function(ThemeMode) onThemeChanged;
+  final Function(double) onFontSizeChanged;
+  final double fontSize;
 
-  const SettingsScreen({super.key, required this.onThemeChanged});
+  const SettingsScreen({
+    super.key,
+    required this.onThemeChanged,
+    required this.onFontSizeChanged,
+    required this.fontSize,
+  });
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -655,7 +717,6 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   late SharedPreferences _prefs;
   bool _notificationsEnabled = true;
-  double _fontSize = 16.0;
   ThemeMode _selectedTheme = ThemeMode.light;
   bool _isLoaded = false;
 
@@ -668,7 +729,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadSettings() async {
     _prefs = await SharedPreferences.getInstance();
     _notificationsEnabled = _prefs.getBool('notifications') ?? true;
-    _fontSize = _prefs.getDouble('fontSize') ?? 16.0;
     _selectedTheme = _prefs.getBool('isDarkMode') ?? false
         ? ThemeMode.dark
         : ThemeMode.light;
@@ -680,11 +740,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _saveNotifications(bool value) async {
     await _prefs.setBool('notifications', value);
     setState(() => _notificationsEnabled = value);
-  }
-
-  Future<void> _saveFontSize(double value) async {
-    await _prefs.setDouble('fontSize', value);
-    setState(() => _fontSize = value);
   }
 
   @override
@@ -761,19 +816,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 12),
                     Slider(
-                      value: _fontSize,
+                      value: widget.fontSize,
                       min: 12,
                       max: 24,
                       divisions: 6,
-                      label: _fontSize.toStringAsFixed(0),
+                      label: widget.fontSize.toStringAsFixed(0),
                       onChanged: (value) {
-                        _saveFontSize(value);
+                        widget.onFontSizeChanged(value);
                       },
                     ),
                     Center(
                       child: Text(
                         'Preview teksta',
-                        style: TextStyle(fontSize: _fontSize),
+                        style: TextStyle(fontSize: widget.fontSize),
                       ),
                     ),
                   ],
