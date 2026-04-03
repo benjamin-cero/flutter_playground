@@ -539,21 +539,68 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                   ),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
-                    // Trebao bi napraviti detail screen ali nemam vremena
-                    showDialog(
+                    // Zamijenjeno sa lijepim BottomSheet-om umjesto obicnog dialoga!
+                    showModalBottomSheet(
                       context: context,
-                      builder: (context) => AlertDialog(
-                        title: Text('${user['firstName']} ${user['lastName']}'),
-                        content: Text(
-                          "Radi u odjeljenju: ${user['company']['department']}",
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('OK'),
-                          ),
-                        ],
+                      isScrollControlled: true, // Popravlja problem sa overflowom
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                       ),
+                      builder: (context) {
+                        return SafeArea(
+                          child: SingleChildScrollView(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  CircleAvatar(
+                                    radius: 40,
+                                    backgroundColor: Colors.deepPurple[200],
+                                    child: Text(
+                                      user['firstName'][0] + user['lastName'][0],
+                                      style: const TextStyle(fontSize: 32, color: Colors.white),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    '${user['firstName']} ${user['lastName']}',
+                                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    user['email'],
+                                    style: const TextStyle(fontSize: 16, color: Colors.grey),
+                                  ),
+                                  const Divider(height: 32),
+                                  ListTile(
+                                    leading: const Icon(Icons.work, color: Colors.deepPurple),
+                                    title: Text(user['company']['name']),
+                                    subtitle: Text('Odjeljenje: ${user['company']['department']}'),
+                                  ),
+                                  ListTile(
+                                    leading: const Icon(Icons.location_on, color: Colors.deepPurple),
+                                    title: Text('${user['address']['city']}'),
+                                    subtitle: Text('${user['address']['address']}'),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      minimumSize: const Size(double.infinity, 50),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('Zatvori'),
+                                  ),
+                                  const SizedBox(height: 8), // Dodatni prostor na samom dnu ispod tipke
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
                 );
@@ -662,26 +709,28 @@ class _AnimationPlaygroundState extends State<AnimationPlayground>
 
             const SizedBox(height: 40),
 
-            // Eksperimentisanje sa oblicima (ClipPath - nasao na StackOverflowu)
-            // TODO: Skontati kako se pravi pravi CustomClipper
-            Container(
-              height: 150,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Colors.purple, Colors.blue],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+            // Eksperimentisanje sa oblicima - uspješno dodan CustomClipper!
+            ClipPath(
+              clipper: WaveClipper(),
+              child: Container(
+                height: 150,
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.purple, Colors.blue],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Center(
-                child: Text(
-                  'Gradient Container',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontStyle: FontStyle.italic,
+                child: const Center(
+                  child: Text(
+                    'Wave Custom Clipper',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
                 ),
               ),
@@ -693,6 +742,25 @@ class _AnimationPlaygroundState extends State<AnimationPlayground>
       ),
     );
   }
+}
+
+// CustomClipper klasa koju sam konačno skontao kako radi!
+class WaveClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    var path = Path();
+    path.lineTo(0, size.height - 40);
+    path.quadraticBezierTo(
+        size.width / 4, size.height, size.width / 2, size.height - 40);
+    path.quadraticBezierTo(
+        size.width * 3 / 4, size.height - 80, size.width, size.height - 40);
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
 
 // ---------------------------------------------------------
