@@ -57,13 +57,18 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'Moj Flutter Playground',
       theme: ThemeData(
-        primarySwatch: Colors.deepPurple,
+        useMaterial3: true,
+        colorSchemeSeed: Colors.deepPurple,
         textTheme: const TextTheme(
           displayLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-          bodyLarge: TextStyle(fontSize: 18, color: Colors.black87),
+          bodyLarge: TextStyle(fontSize: 18),
         ),
       ),
-      darkTheme: ThemeData.dark(),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        colorSchemeSeed: Colors.deepPurple,
+        brightness: Brightness.dark,
+      ),
       themeMode: _themeMode,
       home: MainMenuScreen(
         onThemeChanged: _changeTheme,
@@ -136,22 +141,29 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Flutter 4 Months Progress \uD83D\uDE80'),
-        elevation: 10,
-        backgroundColor: Colors.deepPurpleAccent,
+        title: const Text('Flutter Progress \uD83D\uDE80', style: TextStyle(fontWeight: FontWeight.w600)),
+        centerTitle: true,
+        elevation: 2,
+        shadowColor: Colors.black45,
       ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             const UserAccountsDrawerHeader(
-              accountName: Text('Benjamin (Flutter Dev)'),
+              accountName: Text('Benjamin (Flutter Dev)', style: TextStyle(fontWeight: FontWeight.bold)),
               accountEmail: Text('Benjamin.cero25@gmail.com'),
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
-                child: Text('J', style: TextStyle(fontSize: 24)),
+                child: Text('B', style: TextStyle(fontSize: 24, color: Colors.deepPurple, fontWeight: FontWeight.bold)),
               ),
-              decoration: BoxDecoration(color: Colors.deepPurpleAccent),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.deepPurple, Colors.purpleAccent],
+                  begin: Alignment.bottomLeft,
+                  end: Alignment.topRight,
+                ),
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.calculate),
@@ -255,18 +267,19 @@ class _CounterAppOldState extends State<CounterAppOld> {
           ),
           const SizedBox(height: 20),
           Card(
-            elevation: 5,
+            elevation: 4,
+            shadowColor: Colors.deepPurple.withOpacity(0.4),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(24),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(40.0),
+              padding: const EdgeInsets.symmetric(vertical: 50.0, horizontal: 40.0),
               child: Column(
                 children: [
                   Text(
-                    'Brojac: $brojac',
+                    'Brojač: $brojac',
                     style: TextStyle(
-                      fontSize: widget.fontSize + 12,
+                      fontSize: widget.fontSize + 16,
                       color: farba,
                       fontWeight: FontWeight.bold,
                     ),
@@ -396,12 +409,13 @@ class _TodoListScreenState extends State<TodoListScreen> {
                   ).showSnackBar(SnackBar(content: Text('Izbrisan task')));
                 },
                 child: Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     leading: Checkbox(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                       value: task['done'],
                       onChanged: (bool? value) {
                         setState(() {
@@ -413,14 +427,13 @@ class _TodoListScreenState extends State<TodoListScreen> {
                       task['title'],
                       style: TextStyle(
                         fontSize: widget.fontSize,
-                        decoration: task['done']
-                            ? TextDecoration.lineThrough
-                            : TextDecoration.none,
-                        color: task['done'] ? Colors.grey : Colors.black,
+                        fontWeight: FontWeight.w500,
+                        decoration: task['done'] ? TextDecoration.lineThrough : null,
+                        color: task['done'] ? Colors.grey : null,
                       ),
                     ),
                     trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
                       onPressed: () => _deleteTask(index),
                     ),
                   ),
@@ -516,14 +529,19 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
               itemBuilder: (context, index) {
                 final user = _users[index];
                 return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   leading: CircleAvatar(
-                    backgroundColor: Colors.deepPurple[100],
-                    child: Text(user['firstName'][0]), // prvo slovo imena
+                    radius: 25,
+                    backgroundColor: Colors.deepPurple.withOpacity(0.15),
+                    child: Text(
+                      user['firstName'][0],
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple, fontSize: 20),
+                    ),
                   ),
                   title: Text(
                     '${user['firstName']} ${user['lastName']}',
                     style: TextStyle(
-                      fontSize: widget.fontSize,
+                      fontSize: widget.fontSize + 2,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -544,16 +562,25 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                       context: context,
                       isScrollControlled: true, // Popravlja problem sa overflowom
                       shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
                       ),
                       builder: (context) {
                         return SafeArea(
                           child: SingleChildScrollView(
                             child: Padding(
-                              padding: const EdgeInsets.all(24.0),
+                              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
+                                  Container(
+                                    width: 50,
+                                    height: 5,
+                                    margin: const EdgeInsets.only(bottom: 24),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[400],
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
                                   CircleAvatar(
                                     radius: 40,
                                     backgroundColor: Colors.deepPurple[200],
@@ -833,14 +860,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             // Tema selector
             Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Tema',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    const Row(
+                      children: [
+                        Icon(Icons.palette_outlined, color: Colors.deepPurple),
+                        SizedBox(width: 10),
+                        Text('Tema', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     RadioListTile<ThemeMode>(
@@ -873,14 +905,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             // Font size slider
             Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Veličina teksta',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    const Row(
+                      children: [
+                        Icon(Icons.text_fields_outlined, color: Colors.deepPurple),
+                        SizedBox(width: 10),
+                        Text('Veličina teksta', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     Slider(
@@ -913,11 +950,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
 
             Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               child: SwitchListTile(
-                title: const Text('Omogući notifikacije'),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                title: const Text('Omogući notifikacije', style: TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: const Text('Primaj upozorenja iz aplikacije'),
                 value: _notificationsEnabled,
                 onChanged: _saveNotifications,
+                activeColor: Colors.deepPurple,
               ),
             ),
             const SizedBox(height: 24),
@@ -930,8 +971,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
 
             Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -958,13 +1001,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
                       onPressed: () {
                         showDialog(
                           context: context,
                           builder: (context) => AlertDialog(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                             title: const Text('O aplikaciji'),
                             content: const Text(
-                              'Ovo je moj playground za učenje Fluatera!\n\n'
+                              'Ovo je moj playground za učenje Fluttera!\n\n'
                               'Kroz 4 mjeseca naučio sam:\n'
                               '- Widgets (Stateless, Stateful)\n'
                               '- HTTP & JSON\n'
