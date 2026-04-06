@@ -112,6 +112,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
       const TodoListScreen(fontSize: 16.0), // vjezbao liste
       const ApiTestScreen(fontSize: 16.0), // ucio HTTP requeste (ubilo me)
       const AnimationPlayground(fontSize: 16.0), // kul animacije
+      const TipCalculatorScreen(), // NOVO: Tip Calculator
       SettingsScreen(
         onThemeChanged: widget.onThemeChanged,
         onFontSizeChanged: widget.onFontSizeChanged,
@@ -129,6 +130,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
       TodoListScreen(fontSize: widget.fontSize),
       ApiTestScreen(fontSize: widget.fontSize),
       AnimationPlayground(fontSize: widget.fontSize),
+      TipCalculatorScreen(fontSize: widget.fontSize),
       SettingsScreen(
         onThemeChanged: widget.onThemeChanged,
         onFontSizeChanged: widget.onFontSizeChanged,
@@ -199,10 +201,18 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             ),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('5. Settings ⚙️'),
+              leading: const Icon(Icons.calculate),
+              title: const Text('5. Tip Calculator 💰'),
               onTap: () {
                 setState(() => _selectedIndex = 4);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('6. Settings ⚙️'),
+              onTap: () {
+                setState(() => _selectedIndex = 5);
                 Navigator.pop(context);
               },
             ),
@@ -309,7 +319,7 @@ class _CounterAppOldState extends State<CounterAppOld> {
                     TextButton.icon(
                       onPressed: _resetuj,
                       icon: const Icon(Icons.refresh),
-                      label: const Text('Restuj'),
+                      label: const Text('Resetuj'),
                     ),
                 ],
               ),
@@ -1036,6 +1046,100 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------
+// 6. TIP CALCULATOR SCREEN (Novi task za commit!)
+// ---------------------------------------------------------
+class TipCalculatorScreen extends StatefulWidget {
+  final double fontSize;
+
+  const TipCalculatorScreen({super.key, this.fontSize = 16.0});
+
+  @override
+  State<TipCalculatorScreen> createState() => _TipCalculatorScreenState();
+}
+
+class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
+  final TextEditingController _amountController = TextEditingController();
+  double _tipPercentage = 10.0;
+  double _tipAmount = 0.0;
+  double _totalAmount = 0.0;
+
+  void _calculateTip() {
+    double billAmount = double.tryParse(_amountController.text) ?? 0.0;
+    setState(() {
+      _tipAmount = billAmount * (_tipPercentage / 100);
+      _totalAmount = billAmount + _tipAmount;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Brzi izračun napojnice 😎',
+              style: TextStyle(fontSize: widget.fontSize + 4, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _amountController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'Iznos računa (KM)',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.attach_money),
+                filled: true,
+              ),
+              onChanged: (value) => _calculateTip(),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Napojnica: ${_tipPercentage.toInt()}%',
+              style: TextStyle(fontSize: widget.fontSize, fontWeight: FontWeight.bold),
+            ),
+            Slider(
+              value: _tipPercentage,
+              min: 0,
+              max: 30,
+              divisions: 6,
+              label: '${_tipPercentage.toInt()}%',
+              onChanged: (value) {
+                setState(() {
+                  _tipPercentage = value;
+                  _calculateTip();
+                });
+              },
+            ),
+            const SizedBox(height: 20),
+            Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              color: Theme.of(context).colorScheme.primaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  children: [
+                    Text('Iznos napojnice: ${_tipAmount.toStringAsFixed(2)} KM',
+                        style: TextStyle(fontSize: widget.fontSize, color: Theme.of(context).colorScheme.onPrimaryContainer)),
+                    const SizedBox(height: 10),
+                    Text('Ukupno za platiti: ${_totalAmount.toStringAsFixed(2)} KM',
+                        style: TextStyle(fontSize: widget.fontSize + 4, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimaryContainer)),
+                  ],
+                ),
+              ),
+            )
           ],
         ),
       ),
