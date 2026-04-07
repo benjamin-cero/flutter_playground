@@ -153,17 +153,17 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
           padding: EdgeInsets.zero,
           children: [
             const UserAccountsDrawerHeader(
-              accountName: Text('Benjamin (Flutter Dev)', style: TextStyle(fontWeight: FontWeight.bold)),
-              accountEmail: Text('Benjamin.cero25@gmail.com'),
+              accountName: Text('Benjamin (Flutter Dev)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              accountEmail: Text('Benjamin.cero25@gmail.com', style: TextStyle(color: Colors.white70)),
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
-                child: Text('B', style: TextStyle(fontSize: 24, color: Colors.deepPurple, fontWeight: FontWeight.bold)),
+                child: Text('B', style: TextStyle(fontSize: 28, color: Colors.deepPurple, fontWeight: FontWeight.bold)),
               ),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.deepPurple, Colors.purpleAccent],
-                  begin: Alignment.bottomLeft,
-                  end: Alignment.topRight,
+                  colors: [Colors.deepPurple, Colors.indigo],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
               ),
             ),
@@ -1070,6 +1070,7 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
   double _tipPercentage = 10.0;
   double _tipAmount = 0.0;
   double _totalAmount = 0.0;
+  int _splitCount = 1;
 
   void _calculateTip() {
     double billAmount = double.tryParse(_amountController.text) ?? 0.0;
@@ -1088,33 +1089,65 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Brzi izračun napojnice 😎',
+              'Napojnica i Račun 😎',
               style: TextStyle(fontSize: widget.fontSize + 4, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _amountController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: 'Iznos računa (KM)',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                prefixIcon: const Icon(Icons.attach_money),
-                filled: true,
+            const SizedBox(height: 24),
+            Container(
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  )
+                ],
               ),
-              onChanged: (value) => _calculateTip(),
+              child: TextField(
+                controller: _amountController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: 'Ukupan iznos računa (KM)',
+                  labelStyle: TextStyle(color: Theme.of(context).colorScheme.primary),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                  prefixIcon: Icon(Icons.receipt_long, color: Theme.of(context).colorScheme.primary),
+                  filled: true,
+                  fillColor: Theme.of(context).cardColor,
+                ),
+                onChanged: (value) => _calculateTip(),
+              ),
             ),
-            const SizedBox(height: 20),
-            Text(
-              'Napojnica: ${_tipPercentage.toInt()}%',
-              style: TextStyle(fontSize: widget.fontSize, fontWeight: FontWeight.bold),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Napojnica:',
+                  style: TextStyle(fontSize: widget.fontSize, fontWeight: FontWeight.w500),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${_tipPercentage.toInt()}%',
+                    style: TextStyle(fontSize: widget.fontSize, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
+                  ),
+                ),
+              ],
             ),
             Slider(
               value: _tipPercentage,
               min: 0,
               max: 30,
               divisions: 6,
-              label: '${_tipPercentage.toInt()}%',
+              activeColor: Theme.of(context).colorScheme.primary,
               onChanged: (value) {
                 setState(() {
                   _tipPercentage = value;
@@ -1122,21 +1155,99 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
                 });
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Broj osoba (Split):',
+                  style: TextStyle(fontSize: widget.fontSize, fontWeight: FontWeight.w500),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '$_splitCount',
+                    style: TextStyle(fontSize: widget.fontSize, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.secondary),
+                  ),
+                ),
+              ],
+            ),
+            Slider(
+              value: _splitCount.toDouble(),
+              min: 1,
+              max: 10,
+              divisions: 9,
+              activeColor: Theme.of(context).colorScheme.secondary,
+              onChanged: (value) {
+                setState(() {
+                  _splitCount = value.toInt();
+                });
+              },
+            ),
+            const SizedBox(height: 28),
             Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              color: Theme.of(context).colorScheme.primaryContainer,
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  children: [
-                    Text('Iznos napojnice: ${_tipAmount.toStringAsFixed(2)} KM',
-                        style: TextStyle(fontSize: widget.fontSize, color: Theme.of(context).colorScheme.onPrimaryContainer)),
-                    const SizedBox(height: 10),
-                    Text('Ukupno za platiti: ${_totalAmount.toStringAsFixed(2)} KM',
-                        style: TextStyle(fontSize: widget.fontSize + 4, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimaryContainer)),
-                  ],
+              elevation: 8,
+              shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).colorScheme.primary,
+                      Theme.of(context).colorScheme.secondary,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(28.0),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Samo napojnica:', style: TextStyle(fontSize: widget.fontSize, color: Colors.white70)),
+                          Text('${_tipAmount.toStringAsFixed(2)} KM', style: TextStyle(fontSize: widget.fontSize, fontWeight: FontWeight.w600, color: Colors.white)),
+                        ],
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Divider(color: Colors.white30, height: 1),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Ukupno:', style: TextStyle(fontSize: widget.fontSize + 2, fontWeight: FontWeight.w500, color: Colors.white)),
+                          Text('${_totalAmount.toStringAsFixed(2)} KM', style: TextStyle(fontSize: widget.fontSize + 4, fontWeight: FontWeight.bold, color: Colors.white)),
+                        ],
+                      ),
+                      if (_splitCount > 1) ...[
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Divider(color: Colors.white30, height: 1),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.group, color: Colors.white70, size: 24),
+                                const SizedBox(width: 8),
+                                Text('Po osobi:', style: TextStyle(fontSize: widget.fontSize + 2, fontWeight: FontWeight.w500, color: Colors.white)),
+                              ],
+                            ),
+                            Text('${(_totalAmount / _splitCount).toStringAsFixed(2)} KM', style: TextStyle(fontSize: widget.fontSize + 6, fontWeight: FontWeight.bold, color: Colors.white)),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
             )
