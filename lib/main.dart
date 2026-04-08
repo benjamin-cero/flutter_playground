@@ -112,7 +112,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
       const TodoListScreen(fontSize: 16.0), // vjezbao liste
       const ApiTestScreen(fontSize: 16.0), // ucio HTTP requeste (ubilo me)
       const AnimationPlayground(fontSize: 16.0), // kul animacije
-      const TipCalculatorScreen(), // NOVO: Tip Calculator
+      const TipCalculatorScreen(fontSize: 16.0), // Tip Calculator
+      const FinanceDashboardScreen(fontSize: 16.0), // NOVO: Finance Dashboard
       SettingsScreen(
         onThemeChanged: widget.onThemeChanged,
         onFontSizeChanged: widget.onFontSizeChanged,
@@ -131,6 +132,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
       ApiTestScreen(fontSize: widget.fontSize),
       AnimationPlayground(fontSize: widget.fontSize),
       TipCalculatorScreen(fontSize: widget.fontSize),
+      FinanceDashboardScreen(fontSize: widget.fontSize),
       SettingsScreen(
         onThemeChanged: widget.onThemeChanged,
         onFontSizeChanged: widget.onFontSizeChanged,
@@ -209,10 +211,18 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('6. Settings ⚙️'),
+              leading: const Icon(Icons.account_balance_wallet),
+              title: const Text('6. Finance Dashboard 📈'),
               onTap: () {
                 setState(() => _selectedIndex = 5);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('7. Settings ⚙️'),
+              onTap: () {
+                setState(() => _selectedIndex = 6);
                 Navigator.pop(context);
               },
             ),
@@ -1252,6 +1262,259 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
               ),
             )
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------
+// 7. FINANCE DASHBOARD (Portfolio / Posao ready UI)
+// ---------------------------------------------------------
+class FinanceDashboardScreen extends StatefulWidget {
+  final double fontSize;
+
+  const FinanceDashboardScreen({super.key, this.fontSize = 16.0});
+
+  @override
+  State<FinanceDashboardScreen> createState() => _FinanceDashboardScreenState();
+}
+
+class _FinanceDashboardScreenState extends State<FinanceDashboardScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  // Mock podaci za transakcije (da kod bude cist i lagan za skontat)
+  final List<Map<String, dynamic>> _transactions = [
+    {'title': 'Dribbble Pro', 'category': 'Pretplata', 'amount': -15.00, 'icon': Icons.design_services, 'color': Colors.pink},
+    {'title': 'Plata (Freelance)', 'category': 'Prihod', 'amount': 1250.00, 'icon': Icons.work_outline, 'color': Colors.green},
+    {'title': 'Kafa sa klijentom', 'category': 'Hrana & Piće', 'amount': -8.50, 'icon': Icons.local_cafe, 'color': Colors.orange},
+    {'title': 'Supermarket', 'category': 'Namirnice', 'amount': -145.20, 'icon': Icons.shopping_cart, 'color': Colors.blue},
+    {'title': 'Udemy Kurs', 'category': 'Edukacija', 'amount': -24.99, 'icon': Icons.menu_book, 'color': Colors.purple},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Animacija koja se pokrene cim se ucita ekran - profesionalni dojam
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutQuart),
+    );
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose(); // Vrlo bitno za otpustanje memorije
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. HEADER SEKCIJA (Balance Card)
+              SlideTransition(
+                position: _slideAnimation,
+                child: _buildBalanceCard(context),
+              ),
+              const SizedBox(height: 28),
+
+              // 2. BRZE AKCIJE (Quick Actions)
+              SlideTransition(
+                position: _slideAnimation,
+                child: _buildQuickActions(),
+              ),
+              const SizedBox(height: 32),
+
+              // 3. NEDAVNE TRANSAKCIJE (Recent Transactions)
+              Text(
+                'Nedavne Transakcije',
+                style: TextStyle(
+                  fontSize: widget.fontSize + 2,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ..._transactions.map((tx) {
+                return SlideTransition(
+                  position: _slideAnimation,
+                  child: _buildTransactionTile(tx),
+                );
+              }),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- IZDVOJENE METODE ZA CISTIJI KOD (Clean Code princip) ---
+
+  Widget _buildBalanceCard(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24.0),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          colors: [Colors.deepPurpleAccent, Colors.indigo],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.deepPurple.withOpacity(0.4),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Ukupan Balans',
+            style: TextStyle(color: Colors.white70, fontSize: 16),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '\$ 4,850.50',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: widget.fontSize + 22,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildIncomeExpenseRow(Icons.arrow_downward, 'Prihodi', '\$ 1,250', Colors.greenAccent),
+              _buildIncomeExpenseRow(Icons.arrow_upward, 'Rashodi', '\$ 193.69', Colors.redAccent),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIncomeExpenseRow(IconData icon, String label, String amount, Color iconColor) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: iconColor, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            const SizedBox(height: 4),
+            Text(amount, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuickActions() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _buildActionBtn(Icons.send, 'Pošalji'),
+        _buildActionBtn(Icons.account_balance_wallet, 'Računi'),
+        _buildActionBtn(Icons.pie_chart, 'Statistika'),
+        _buildActionBtn(Icons.more_horiz, 'Više'),
+      ],
+    );
+  }
+
+  Widget _buildActionBtn(IconData icon, String label) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 28),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: widget.fontSize - 4,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTransactionTile(Map<String, dynamic> tx) {
+    final bool isIncome = tx['amount'] > 0;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      color: Theme.of(context).cardColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: (tx['color'] as Color).withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(tx['icon'], color: tx['color']),
+        ),
+        title: Text(
+          tx['title'],
+          style: TextStyle(
+            fontSize: widget.fontSize,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Text(
+          tx['category'],
+          style: TextStyle(fontSize: widget.fontSize - 4),
+        ),
+        trailing: Text(
+          isIncome ? '+ \$${tx['amount'].toStringAsFixed(2)}' : '- \$${tx['amount'].abs().toStringAsFixed(2)}',
+          style: TextStyle(
+            color: isIncome ? Colors.green : Colors.red,
+            fontWeight: FontWeight.bold,
+            fontSize: widget.fontSize,
+          ),
         ),
       ),
     );
