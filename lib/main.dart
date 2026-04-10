@@ -88,7 +88,7 @@ class MainMenuScreen extends StatefulWidget {
   final double fontSize;
   final Function(double) onFontSizeChanged;
 
-  MainMenuScreen({
+  const MainMenuScreen({
     super.key,
     required this.onThemeChanged,
     required this.fontSize,
@@ -145,7 +145,10 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Flutter Progress \uD83D\uDE80', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Flutter Progress \uD83D\uDE80',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         centerTitle: true,
         elevation: 2,
         shadowColor: Colors.black45,
@@ -155,11 +158,24 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
           padding: EdgeInsets.zero,
           children: [
             const UserAccountsDrawerHeader(
-              accountName: Text('Benjamin (Flutter Dev)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-              accountEmail: Text('Benjamin.cero25@gmail.com', style: TextStyle(color: Colors.white70)),
+              accountName: Text(
+                'Benjamin (Flutter Dev)',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              accountEmail: Text(
+                'Benjamin.cero25@gmail.com',
+                style: TextStyle(color: Colors.white70),
+              ),
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
-                child: Text('B', style: TextStyle(fontSize: 28, color: Colors.deepPurple, fontWeight: FontWeight.bold)),
+                child: Text(
+                  'B',
+                  style: TextStyle(
+                    fontSize: 28,
+                    color: Colors.deepPurple,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -293,7 +309,10 @@ class _CounterAppOldState extends State<CounterAppOld> {
               borderRadius: BorderRadius.circular(24),
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 50.0, horizontal: 40.0),
+              padding: const EdgeInsets.symmetric(
+                vertical: 50.0,
+                horizontal: 40.0,
+              ),
               child: Column(
                 children: [
                   Text(
@@ -429,13 +448,23 @@ class _TodoListScreenState extends State<TodoListScreen> {
                   ).showSnackBar(SnackBar(content: Text('Izbrisan task')));
                 },
                 child: Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
                   elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
                     leading: Checkbox(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
                       value: task['done'],
                       onChanged: (bool? value) {
                         setState(() {
@@ -448,12 +477,17 @@ class _TodoListScreenState extends State<TodoListScreen> {
                       style: TextStyle(
                         fontSize: widget.fontSize,
                         fontWeight: FontWeight.w500,
-                        decoration: task['done'] ? TextDecoration.lineThrough : null,
+                        decoration: task['done']
+                            ? TextDecoration.lineThrough
+                            : null,
                         color: task['done'] ? Colors.grey : null,
                       ),
                     ),
                     trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                      icon: const Icon(
+                        Icons.delete_outline,
+                        color: Colors.redAccent,
+                      ),
                       onPressed: () => _deleteTask(index),
                     ),
                   ),
@@ -501,9 +535,7 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
 
     try {
       // korisim jsonplaceholder jer je besplatan
-      final response = await http.get(
-        Uri.parse('https://dummyjson.com/users'),
-      );
+      final response = await http.get(Uri.parse('https://dummyjson.com/users'));
 
       if (response.statusCode == 200) {
         setState(() {
@@ -549,13 +581,20 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
               itemBuilder: (context, index) {
                 final user = _users[index];
                 return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
                   leading: CircleAvatar(
                     radius: 25,
                     backgroundColor: Colors.deepPurple.withOpacity(0.15),
                     child: Text(
                       user['firstName'][0],
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple, fontSize: 20),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.deepPurple,
+                        fontSize: 20,
+                      ),
                     ),
                   ),
                   title: Text(
@@ -580,15 +619,21 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                     // Zamijenjeno sa lijepim BottomSheet-om umjesto obicnog dialoga!
                     showModalBottomSheet(
                       context: context,
-                      isScrollControlled: true, // Popravlja problem sa overflowom
+                      isScrollControlled:
+                          true, // Popravlja problem sa overflowom
                       shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(28),
+                        ),
                       ),
                       builder: (context) {
                         return SafeArea(
                           child: SingleChildScrollView(
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24.0,
+                                vertical: 16.0,
+                              ),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -605,35 +650,58 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                                     radius: 40,
                                     backgroundColor: Colors.deepPurple[200],
                                     child: Text(
-                                      user['firstName'][0] + user['lastName'][0],
-                                      style: const TextStyle(fontSize: 32, color: Colors.white),
+                                      user['firstName'][0] +
+                                          user['lastName'][0],
+                                      style: const TextStyle(
+                                        fontSize: 32,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
                                     '${user['firstName']} ${user['lastName']}',
-                                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
                                     user['email'],
-                                    style: const TextStyle(fontSize: 16, color: Colors.grey),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey,
+                                    ),
                                   ),
                                   const Divider(height: 32),
                                   ListTile(
-                                    leading: const Icon(Icons.work, color: Colors.deepPurple),
+                                    leading: const Icon(
+                                      Icons.work,
+                                      color: Colors.deepPurple,
+                                    ),
                                     title: Text(user['company']['name']),
-                                    subtitle: Text('Odjeljenje: ${user['company']['department']}'),
+                                    subtitle: Text(
+                                      'Odjeljenje: ${user['company']['department']}',
+                                    ),
                                   ),
                                   ListTile(
-                                    leading: const Icon(Icons.location_on, color: Colors.deepPurple),
+                                    leading: const Icon(
+                                      Icons.location_on,
+                                      color: Colors.deepPurple,
+                                    ),
                                     title: Text('${user['address']['city']}'),
-                                    subtitle: Text('${user['address']['address']}'),
+                                    subtitle: Text(
+                                      '${user['address']['address']}',
+                                    ),
                                   ),
                                   const SizedBox(height: 16),
                                   ElevatedButton(
                                     style: ElevatedButton.styleFrom(
-                                      minimumSize: const Size(double.infinity, 50),
+                                      minimumSize: const Size(
+                                        double.infinity,
+                                        50,
+                                      ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
                                       ),
@@ -641,7 +709,9 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                                     onPressed: () => Navigator.pop(context),
                                     child: const Text('Zatvori'),
                                   ),
-                                  const SizedBox(height: 8), // Dodatni prostor na samom dnu ispod tipke
+                                  const SizedBox(
+                                    height: 8,
+                                  ), // Dodatni prostor na samom dnu ispod tipke
                                 ],
                               ),
                             ),
@@ -798,9 +868,17 @@ class WaveClipper extends CustomClipper<Path> {
     var path = Path();
     path.lineTo(0, size.height - 40);
     path.quadraticBezierTo(
-        size.width / 4, size.height, size.width / 2, size.height - 40);
+      size.width / 4,
+      size.height,
+      size.width / 2,
+      size.height - 40,
+    );
     path.quadraticBezierTo(
-        size.width * 3 / 4, size.height - 80, size.width, size.height - 40);
+      size.width * 3 / 4,
+      size.height - 80,
+      size.width,
+      size.height - 40,
+    );
     path.lineTo(size.width, 0);
     path.close();
     return path;
@@ -881,7 +959,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // Tema selector
             Card(
               elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
@@ -891,7 +971,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       children: [
                         Icon(Icons.palette_outlined, color: Colors.deepPurple),
                         SizedBox(width: 10),
-                        Text('Tema', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                        Text(
+                          'Tema',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -926,7 +1012,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // Font size slider
             Card(
               elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
@@ -934,9 +1022,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.text_fields_outlined, color: Colors.deepPurple),
+                        Icon(
+                          Icons.text_fields_outlined,
+                          color: Colors.deepPurple,
+                        ),
                         SizedBox(width: 10),
-                        Text('Veličina teksta', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                        Text(
+                          'Veličina teksta',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -971,14 +1068,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             Card(
               elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: SwitchListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                title: const Text('Omogući notifikacije', style: TextStyle(fontWeight: FontWeight.w600)),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
+                title: const Text(
+                  'Omogući notifikacije',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
                 subtitle: const Text('Primaj upozorenja iz aplikacije'),
                 value: _notificationsEnabled,
                 onChanged: _saveNotifications,
-                activeColor: Colors.deepPurple,
+                activeThumbColor: Colors.deepPurple,
               ),
             ),
             const SizedBox(height: 24),
@@ -992,7 +1097,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             Card(
               elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
@@ -1022,13 +1129,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       onPressed: () {
                         showDialog(
                           context: context,
                           builder: (context) => AlertDialog(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
                             title: const Text('O aplikaciji'),
                             content: const Text(
                               'Ovo je moj playground za učenje Fluttera!\n\n'
@@ -1100,7 +1211,10 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
           children: [
             Text(
               'Napojnica i Račun 😎',
-              style: TextStyle(fontSize: widget.fontSize + 4, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: widget.fontSize + 4,
+                fontWeight: FontWeight.bold,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -1108,23 +1222,32 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
               decoration: BoxDecoration(
                 boxShadow: [
                   BoxShadow(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(0.05),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
-                  )
+                  ),
                 ],
               ),
               child: TextField(
                 controller: _amountController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: InputDecoration(
                   labelText: 'Ukupan iznos računa (KM)',
-                  labelStyle: TextStyle(color: Theme.of(context).colorScheme.primary),
+                  labelStyle: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none,
                   ),
-                  prefixIcon: Icon(Icons.receipt_long, color: Theme.of(context).colorScheme.primary),
+                  prefixIcon: Icon(
+                    Icons.receipt_long,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   filled: true,
                   fillColor: Theme.of(context).cardColor,
                 ),
@@ -1137,17 +1260,29 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
               children: [
                 Text(
                   'Napojnica:',
-                  style: TextStyle(fontSize: widget.fontSize, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontSize: widget.fontSize,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     '${_tipPercentage.toInt()}%',
-                    style: TextStyle(fontSize: widget.fontSize, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
+                    style: TextStyle(
+                      fontSize: widget.fontSize,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
                 ),
               ],
@@ -1171,17 +1306,29 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
               children: [
                 Text(
                   'Broj osoba (Split):',
-                  style: TextStyle(fontSize: widget.fontSize, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontSize: widget.fontSize,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.secondary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     '$_splitCount',
-                    style: TextStyle(fontSize: widget.fontSize, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.secondary),
+                    style: TextStyle(
+                      fontSize: widget.fontSize,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
                   ),
                 ),
               ],
@@ -1201,8 +1348,12 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
             const SizedBox(height: 28),
             Card(
               elevation: 8,
-              shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              shadowColor: Theme.of(
+                context,
+              ).colorScheme.primary.withOpacity(0.5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(24),
@@ -1222,8 +1373,21 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Samo napojnica:', style: TextStyle(fontSize: widget.fontSize, color: Colors.white70)),
-                          Text('${_tipAmount.toStringAsFixed(2)} KM', style: TextStyle(fontSize: widget.fontSize, fontWeight: FontWeight.w600, color: Colors.white)),
+                          Text(
+                            'Samo napojnica:',
+                            style: TextStyle(
+                              fontSize: widget.fontSize,
+                              color: Colors.white70,
+                            ),
+                          ),
+                          Text(
+                            '${_tipAmount.toStringAsFixed(2)} KM',
+                            style: TextStyle(
+                              fontSize: widget.fontSize,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
                         ],
                       ),
                       const Padding(
@@ -1233,8 +1397,22 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Ukupno:', style: TextStyle(fontSize: widget.fontSize + 2, fontWeight: FontWeight.w500, color: Colors.white)),
-                          Text('${_totalAmount.toStringAsFixed(2)} KM', style: TextStyle(fontSize: widget.fontSize + 4, fontWeight: FontWeight.bold, color: Colors.white)),
+                          Text(
+                            'Ukupno:',
+                            style: TextStyle(
+                              fontSize: widget.fontSize + 2,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            '${_totalAmount.toStringAsFixed(2)} KM',
+                            style: TextStyle(
+                              fontSize: widget.fontSize + 4,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                         ],
                       ),
                       if (_splitCount > 1) ...[
@@ -1247,12 +1425,30 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.group, color: Colors.white70, size: 24),
+                                const Icon(
+                                  Icons.group,
+                                  color: Colors.white70,
+                                  size: 24,
+                                ),
                                 const SizedBox(width: 8),
-                                Text('Po osobi:', style: TextStyle(fontSize: widget.fontSize + 2, fontWeight: FontWeight.w500, color: Colors.white)),
+                                Text(
+                                  'Po osobi:',
+                                  style: TextStyle(
+                                    fontSize: widget.fontSize + 2,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ],
                             ),
-                            Text('${(_totalAmount / _splitCount).toStringAsFixed(2)} KM', style: TextStyle(fontSize: widget.fontSize + 6, fontWeight: FontWeight.bold, color: Colors.white)),
+                            Text(
+                              '${(_totalAmount / _splitCount).toStringAsFixed(2)} KM',
+                              style: TextStyle(
+                                fontSize: widget.fontSize + 6,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -1260,7 +1456,7 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
                   ),
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -1280,24 +1476,66 @@ class FinanceDashboardScreen extends StatefulWidget {
   State<FinanceDashboardScreen> createState() => _FinanceDashboardScreenState();
 }
 
-class _FinanceDashboardScreenState extends State<FinanceDashboardScreen> with SingleTickerProviderStateMixin {
+class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
   // Mock podaci za transakcije
   final List<Map<String, dynamic>> _transactions = [
-    {'title': 'Početno stanje', 'category': 'Ušteđevina', 'amount': 3794.19, 'icon': Icons.account_balance, 'color': Colors.teal},
-    {'title': 'Dribbble Pro', 'category': 'Pretplata', 'amount': -15.00, 'icon': Icons.design_services, 'color': Colors.pink},
-    {'title': 'Plata (Freelance)', 'category': 'Prihod', 'amount': 1250.00, 'icon': Icons.work_outline, 'color': Colors.green},
-    {'title': 'Kafa sa klijentom', 'category': 'Hrana & Piće', 'amount': -8.50, 'icon': Icons.local_cafe, 'color': Colors.orange},
-    {'title': 'Supermarket', 'category': 'Namirnice', 'amount': -145.20, 'icon': Icons.shopping_cart, 'color': Colors.blue},
-    {'title': 'Udemy Kurs', 'category': 'Edukacija', 'amount': -24.99, 'icon': Icons.menu_book, 'color': Colors.purple},
+    {
+      'title': 'Početno stanje',
+      'category': 'Ušteđevina',
+      'amount': 3794.19,
+      'icon': Icons.account_balance,
+      'color': Colors.teal,
+    },
+    {
+      'title': 'Dribbble Pro',
+      'category': 'Pretplata',
+      'amount': -15.00,
+      'icon': Icons.design_services,
+      'color': Colors.pink,
+    },
+    {
+      'title': 'Plata (Freelance)',
+      'category': 'Prihod',
+      'amount': 1250.00,
+      'icon': Icons.work_outline,
+      'color': Colors.green,
+    },
+    {
+      'title': 'Kafa sa klijentom',
+      'category': 'Hrana & Piće',
+      'amount': -8.50,
+      'icon': Icons.local_cafe,
+      'color': Colors.orange,
+    },
+    {
+      'title': 'Supermarket',
+      'category': 'Namirnice',
+      'amount': -145.20,
+      'icon': Icons.shopping_cart,
+      'color': Colors.blue,
+    },
+    {
+      'title': 'Udemy Kurs',
+      'category': 'Edukacija',
+      'amount': -24.99,
+      'icon': Icons.menu_book,
+      'color': Colors.purple,
+    },
   ];
 
-  double get _totalBalance => _transactions.fold(0.0, (sum, item) => sum + item['amount']);
-  double get _totalIncome => _transactions.where((item) => (item['amount'] as double) > 0).fold(0.0, (sum, item) => sum + item['amount']);
-  double get _totalExpense => _transactions.where((item) => (item['amount'] as double) < 0).fold(0.0, (sum, item) => sum + item['amount']);
+  double get _totalBalance =>
+      _transactions.fold(0.0, (sum, item) => sum + item['amount']);
+  double get _totalIncome => _transactions
+      .where((item) => (item['amount'] as double) > 0)
+      .fold(0.0, (sum, item) => sum + item['amount']);
+  double get _totalExpense => _transactions
+      .where((item) => (item['amount'] as double) < 0)
+      .fold(0.0, (sum, item) => sum + item['amount']);
 
   @override
   void initState() {
@@ -1308,13 +1546,15 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen> with Si
       duration: const Duration(milliseconds: 1200),
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
 
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutQuart),
-    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.2),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutQuart));
 
     _controller.forward();
   }
@@ -1331,46 +1571,50 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen> with Si
       children: [
         SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20.0,
+              vertical: 16.0,
+            ),
             child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. HEADER SEKCIJA (Balance Card)
-              SlideTransition(
-                position: _slideAnimation,
-                child: _buildBalanceCard(context),
-              ),
-              const SizedBox(height: 28),
+              opacity: _fadeAnimation,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1. HEADER SEKCIJA (Balance Card)
+                  SlideTransition(
+                    position: _slideAnimation,
+                    child: _buildBalanceCard(context),
+                  ),
+                  const SizedBox(height: 28),
 
-              // 2. BRZE AKCIJE (Quick Actions)
-              SlideTransition(
-                position: _slideAnimation,
-                child: _buildQuickActions(),
-              ),
-              const SizedBox(height: 32),
+                  // 2. BRZE AKCIJE (Quick Actions)
+                  SlideTransition(
+                    position: _slideAnimation,
+                    child: _buildQuickActions(),
+                  ),
+                  const SizedBox(height: 32),
 
-              // 3. NEDAVNE TRANSAKCIJE (Recent Transactions)
-              Text(
-                'Nedavne Transakcije',
-                style: TextStyle(
-                  fontSize: widget.fontSize + 2,
-                  fontWeight: FontWeight.w700,
-                ),
+                  // 3. NEDAVNE TRANSAKCIJE (Recent Transactions)
+                  Text(
+                    'Nedavne Transakcije',
+                    style: TextStyle(
+                      fontSize: widget.fontSize + 2,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ..._transactions.map((tx) {
+                    return SlideTransition(
+                      position: _slideAnimation,
+                      child: _buildTransactionTile(tx),
+                    );
+                  }),
+                  const SizedBox(height: 20),
+                ],
               ),
-              const SizedBox(height: 16),
-              ..._transactions.map((tx) {
-                return SlideTransition(
-                  position: _slideAnimation,
-                  child: _buildTransactionTile(tx),
-                );
-              }),
-              const SizedBox(height: 20),
-            ],
+            ),
           ),
         ),
-      ),
         Positioned(
           bottom: 24,
           right: 24,
@@ -1427,8 +1671,18 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen> with Si
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildIncomeExpenseRow(Icons.arrow_downward, 'Prihodi', '\$ ${_totalIncome.toStringAsFixed(0)}', Colors.greenAccent),
-              _buildIncomeExpenseRow(Icons.arrow_upward, 'Rashodi', '\$ ${_totalExpense.abs().toStringAsFixed(2)}', Colors.redAccent),
+              _buildIncomeExpenseRow(
+                Icons.arrow_downward,
+                'Prihodi',
+                '\$ ${_totalIncome.toStringAsFixed(0)}',
+                Colors.greenAccent,
+              ),
+              _buildIncomeExpenseRow(
+                Icons.arrow_upward,
+                'Rashodi',
+                '\$ ${_totalExpense.abs().toStringAsFixed(2)}',
+                Colors.redAccent,
+              ),
             ],
           ),
         ],
@@ -1436,7 +1690,12 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen> with Si
     );
   }
 
-  Widget _buildIncomeExpenseRow(IconData icon, String label, String amount, Color iconColor) {
+  Widget _buildIncomeExpenseRow(
+    IconData icon,
+    String label,
+    String amount,
+    Color iconColor,
+  ) {
     return Row(
       children: [
         Container(
@@ -1451,9 +1710,18 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen> with Si
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
             const SizedBox(height: 4),
-            Text(amount, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            Text(
+              amount,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
       ],
@@ -1481,7 +1749,11 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen> with Si
             color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 28),
+          child: Icon(
+            icon,
+            color: Theme.of(context).colorScheme.primary,
+            size: 28,
+          ),
         ),
         const SizedBox(height: 8),
         Text(
@@ -1519,22 +1791,31 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen> with Si
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('Nova transakcija', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Nova transakcija',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: titleController,
                     decoration: InputDecoration(
                       labelText: 'Naziv (npr. Plata, Kafa)',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: amountController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Iznos',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       prefixText: '\$ ',
                     ),
                   ),
@@ -1542,7 +1823,10 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen> with Si
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Tip transakcije:', style: TextStyle(fontSize: 16)),
+                      const Text(
+                        'Tip transakcije:',
+                        style: TextStyle(fontSize: 16),
+                      ),
                       ToggleButtons(
                         borderRadius: BorderRadius.circular(12),
                         isSelected: [isIncome, !isIncome],
@@ -1552,8 +1836,14 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen> with Si
                           });
                         },
                         children: const [
-                          Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('Prihod')),
-                          Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('Rashod')),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            child: Text('Prihod'),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            child: Text('Rashod'),
+                          ),
                         ],
                       ),
                     ],
@@ -1562,20 +1852,29 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen> with Si
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     onPressed: () {
                       final title = titleController.text;
-                      final amountText = amountController.text.replaceAll(',', '.');
+                      final amountText = amountController.text.replaceAll(
+                        ',',
+                        '.',
+                      );
                       final amount = double.tryParse(amountText) ?? 0.0;
 
                       if (title.isNotEmpty && amount > 0) {
                         setState(() {
                           _transactions.insert(1, {
                             'title': title,
-                            'category': isIncome ? 'Ostali Prihodi' : 'Ostali Rashodi',
+                            'category': isIncome
+                                ? 'Ostali Prihodi'
+                                : 'Ostali Rashodi',
                             'amount': isIncome ? amount : -amount,
-                            'icon': isIncome ? Icons.account_balance_wallet : Icons.shopping_basket,
+                            'icon': isIncome
+                                ? Icons.account_balance_wallet
+                                : Icons.shopping_basket,
                             'color': isIncome ? Colors.green : Colors.redAccent,
                           });
                         });
@@ -1626,7 +1925,9 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen> with Si
           style: TextStyle(fontSize: widget.fontSize - 4),
         ),
         trailing: Text(
-          isIncome ? '+ \$${tx['amount'].toStringAsFixed(2)}' : '- \$${tx['amount'].abs().toStringAsFixed(2)}',
+          isIncome
+              ? '+ \$${tx['amount'].toStringAsFixed(2)}'
+              : '- \$${tx['amount'].abs().toStringAsFixed(2)}',
           style: TextStyle(
             color: isIncome ? Colors.green : Colors.red,
             fontWeight: FontWeight.bold,
