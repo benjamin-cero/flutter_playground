@@ -1285,14 +1285,19 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen> with Si
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  // Mock podaci za transakcije (da kod bude cist i lagan za skontat)
+  // Mock podaci za transakcije
   final List<Map<String, dynamic>> _transactions = [
+    {'title': 'Početno stanje', 'category': 'Ušteđevina', 'amount': 3794.19, 'icon': Icons.account_balance, 'color': Colors.teal},
     {'title': 'Dribbble Pro', 'category': 'Pretplata', 'amount': -15.00, 'icon': Icons.design_services, 'color': Colors.pink},
     {'title': 'Plata (Freelance)', 'category': 'Prihod', 'amount': 1250.00, 'icon': Icons.work_outline, 'color': Colors.green},
     {'title': 'Kafa sa klijentom', 'category': 'Hrana & Piće', 'amount': -8.50, 'icon': Icons.local_cafe, 'color': Colors.orange},
     {'title': 'Supermarket', 'category': 'Namirnice', 'amount': -145.20, 'icon': Icons.shopping_cart, 'color': Colors.blue},
     {'title': 'Udemy Kurs', 'category': 'Edukacija', 'amount': -24.99, 'icon': Icons.menu_book, 'color': Colors.purple},
   ];
+
+  double get _totalBalance => _transactions.fold(0.0, (sum, item) => sum + item['amount']);
+  double get _totalIncome => _transactions.where((item) => (item['amount'] as double) > 0).fold(0.0, (sum, item) => sum + item['amount']);
+  double get _totalExpense => _transactions.where((item) => (item['amount'] as double) < 0).fold(0.0, (sum, item) => sum + item['amount']);
 
   @override
   void initState() {
@@ -1322,10 +1327,12 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen> with Si
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-        child: FadeTransition(
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+            child: FadeTransition(
           opacity: _fadeAnimation,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1364,6 +1371,17 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen> with Si
           ),
         ),
       ),
+        Positioned(
+          bottom: 24,
+          right: 24,
+          child: FloatingActionButton(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Colors.white,
+            onPressed: () => _showAddTransactionDialog(context),
+            child: const Icon(Icons.add),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1397,7 +1415,7 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen> with Si
           ),
           const SizedBox(height: 8),
           Text(
-            '\$ 4,850.50',
+            '\$ ${_totalBalance.toStringAsFixed(2)}',
             style: TextStyle(
               color: Colors.white,
               fontSize: widget.fontSize + 22,
@@ -1409,8 +1427,8 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen> with Si
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildIncomeExpenseRow(Icons.arrow_downward, 'Prihodi', '\$ 1,250', Colors.greenAccent),
-              _buildIncomeExpenseRow(Icons.arrow_upward, 'Rashodi', '\$ 193.69', Colors.redAccent),
+              _buildIncomeExpenseRow(Icons.arrow_downward, 'Prihodi', '\$ ${_totalIncome.toStringAsFixed(0)}', Colors.greenAccent),
+              _buildIncomeExpenseRow(Icons.arrow_upward, 'Rashodi', '\$ ${_totalExpense.abs().toStringAsFixed(2)}', Colors.redAccent),
             ],
           ),
         ],
@@ -1474,6 +1492,105 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen> with Si
           ),
         ),
       ],
+    );
+  }
+
+  void _showAddTransactionDialog(BuildContext context) {
+    final titleController = TextEditingController();
+    final amountController = TextEditingController();
+    bool isIncome = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 24,
+                right: 24,
+                top: 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Nova transakcija', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      labelText: 'Naziv (npr. Plata, Kafa)',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: amountController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: 'Iznos',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      prefixText: '\$ ',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Tip transakcije:', style: TextStyle(fontSize: 16)),
+                      ToggleButtons(
+                        borderRadius: BorderRadius.circular(12),
+                        isSelected: [isIncome, !isIncome],
+                        onPressed: (index) {
+                          setModalState(() {
+                            isIncome = index == 0;
+                          });
+                        },
+                        children: const [
+                          Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('Prihod')),
+                          Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('Rashod')),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () {
+                      final title = titleController.text;
+                      final amountText = amountController.text.replaceAll(',', '.');
+                      final amount = double.tryParse(amountText) ?? 0.0;
+
+                      if (title.isNotEmpty && amount > 0) {
+                        setState(() {
+                          _transactions.insert(1, {
+                            'title': title,
+                            'category': isIncome ? 'Ostali Prihodi' : 'Ostali Rashodi',
+                            'amount': isIncome ? amount : -amount,
+                            'icon': isIncome ? Icons.account_balance_wallet : Icons.shopping_basket,
+                            'color': isIncome ? Colors.green : Colors.redAccent,
+                          });
+                        });
+                        Navigator.pop(context);
+                      }
+                    },
+                    child: const Text('Dodaj transakciju'),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
