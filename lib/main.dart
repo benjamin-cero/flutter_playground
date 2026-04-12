@@ -393,9 +393,25 @@ class _TodoListScreenState extends State<TodoListScreen> {
   }
 
   void _deleteTask(int index) {
+    final deletedTask = tasks[index];
     setState(() {
       tasks.removeAt(index);
     });
+
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Zadatak izbrisan'),
+        action: SnackBarAction(
+          label: 'Poništi',
+          onPressed: () {
+            setState(() {
+              tasks.insert(index, deletedTask);
+            });
+          },
+        ),
+      ),
+    );
   }
 
   @override
@@ -441,12 +457,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
                   child: const Icon(Icons.delete, color: Colors.white),
                 ),
                 direction: DismissDirection.endToStart,
-                onDismissed: (direction) {
-                  _deleteTask(index);
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Izbrisan task')));
-                },
+                onDismissed: (direction) => _deleteTask(index),
                 child: Card(
                   margin: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -513,13 +524,42 @@ class ApiTestScreen extends StatefulWidget {
   State<ApiTestScreen> createState() => _ApiTestScreenState();
 }
 
+class UserModel {
+  final String firstName;
+  final String lastName;
+  final String email;
+  final String companyName;
+  final String department;
+  final String city;
+  final String address;
+
+  UserModel({
+    required this.firstName,
+    required this.lastName,
+    required this.email,
+    required this.companyName,
+    required this.department,
+    required this.city,
+    required this.address,
+  });
+
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      firstName: json['firstName'] ?? '',
+      lastName: json['lastName'] ?? '',
+      email: json['email'] ?? '',
+      companyName: json['company']?['name'] ?? '',
+      department: json['company']?['department'] ?? '',
+      city: json['address']?['city'] ?? '',
+      address: json['address']?['address'] ?? '',
+    );
+  }
+}
+
 class _ApiTestScreenState extends State<ApiTestScreen> {
-  List<dynamic> _users = [];
+  List<UserModel> _users = [];
   bool _isLoading = false;
   String _errorMessage = '';
-
-  // Pokusao praviti model ali je previse komplikovano, koristim dynamic za sad
-  // class User { ... }
 
   @override
   void initState() {
@@ -539,7 +579,8 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
 
       if (response.statusCode == 200) {
         setState(() {
-          _users = json.decode(response.body)['users']; // parsanje JSON-a
+          final List dynamicList = json.decode(response.body)['users'];
+          _users = dynamicList.map((data) => UserModel.fromJson(data)).toList();
           _isLoading = false;
         });
       } else {
@@ -559,7 +600,33 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
   @override
   Widget build(BuildContext context) {
     return _isLoading
-        ? const Center(child: CircularProgressIndicator())
+        ? ListView.separated(
+            itemCount: 6,
+            separatorBuilder: (_, __) => const Divider(),
+            itemBuilder: (context, _) {
+              final baseColor = Theme.of(context).disabledColor.withOpacity(0.1);
+              final highlightColor = Theme.of(context).disabledColor.withOpacity(0.05);
+              return ListTile(
+                leading: CircleAvatar(
+                  radius: 25,
+                  backgroundColor: baseColor,
+                ),
+                title: Container(
+                  height: 16,
+                  width: 150,
+                  decoration: BoxDecoration(color: baseColor, borderRadius: BorderRadius.circular(4)),
+                  margin: const EdgeInsets.only(bottom: 8, right: 100),
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(height: 12, width: 200, decoration: BoxDecoration(color: highlightColor, borderRadius: BorderRadius.circular(4)), margin: const EdgeInsets.only(bottom: 4)),
+                    Container(height: 12, width: 120, decoration: BoxDecoration(color: highlightColor, borderRadius: BorderRadius.circular(4))),
+                  ],
+                ),
+              );
+            },
+          )
         : _errorMessage.isNotEmpty
         ? Center(
             child: Column(
@@ -589,7 +656,7 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                     radius: 25,
                     backgroundColor: Colors.deepPurple.withOpacity(0.15),
                     child: Text(
-                      user['firstName'][0],
+                      user.firstName.isNotEmpty ? user.firstName[0] : '?',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.deepPurple,
@@ -598,7 +665,7 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                     ),
                   ),
                   title: Text(
-                    '${user['firstName']} ${user['lastName']}',
+                    '${user.firstName} ${user.lastName}',
                     style: TextStyle(
                       fontSize: widget.fontSize + 2,
                       fontWeight: FontWeight.bold,
@@ -607,9 +674,9 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Email: ${user['email']}'),
+                      Text('Email: ${user.email}'),
                       Text(
-                        'Firma: ${user['company']['name']}',
+                        'Firma: ${user.companyName}',
                         style: const TextStyle(fontStyle: FontStyle.italic),
                       ),
                     ],
@@ -650,8 +717,7 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                                     radius: 40,
                                     backgroundColor: Colors.deepPurple[200],
                                     child: Text(
-                                      user['firstName'][0] +
-                                          user['lastName'][0],
+                                      '${user.firstName.isNotEmpty ? user.firstName[0] : ''}${user.lastName.isNotEmpty ? user.lastName[0] : ''}',
                                       style: const TextStyle(
                                         fontSize: 32,
                                         color: Colors.white,
@@ -660,7 +726,7 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    '${user['firstName']} ${user['lastName']}',
+                                    '${user.firstName} ${user.lastName}',
                                     style: const TextStyle(
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
@@ -668,7 +734,7 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    user['email'],
+                                    user.email,
                                     style: const TextStyle(
                                       fontSize: 16,
                                       color: Colors.grey,
@@ -680,9 +746,9 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                                       Icons.work,
                                       color: Colors.deepPurple,
                                     ),
-                                    title: Text(user['company']['name']),
+                                    title: Text(user.companyName),
                                     subtitle: Text(
-                                      'Odjeljenje: ${user['company']['department']}',
+                                      'Odjeljenje: ${user.department}',
                                     ),
                                   ),
                                   ListTile(
@@ -690,9 +756,9 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                                       Icons.location_on,
                                       color: Colors.deepPurple,
                                     ),
-                                    title: Text('${user['address']['city']}'),
+                                    title: Text(user.city),
                                     subtitle: Text(
-                                      '${user['address']['address']}',
+                                      user.address,
                                     ),
                                   ),
                                   const SizedBox(height: 16),
