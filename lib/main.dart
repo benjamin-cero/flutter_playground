@@ -1751,8 +1751,42 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
               ),
             ],
           ),
+          const SizedBox(height: 20),
+          _buildProgressBar(),
         ],
       ),
+    );
+  }
+
+  Widget _buildProgressBar() {
+    if (_totalIncome == 0 && _totalExpense == 0) return const SizedBox.shrink();
+    final totalAmount = _totalIncome + _totalExpense.abs();
+    final incomePercentage = totalAmount > 0 ? _totalIncome / totalAmount : 0.0;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Odnos Prihoda i Rashoda',
+          style: TextStyle(color: Colors.white54, fontSize: 11),
+        ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Row(
+            children: [
+              Expanded(
+                flex: (incomePercentage * 100).toInt() > 0 ? (incomePercentage * 100).toInt() : 1,
+                child: Container(height: 6, color: Colors.greenAccent),
+              ),
+              Expanded(
+                flex: ((1 - incomePercentage) * 100).toInt() > 0 ? ((1 - incomePercentage) * 100).toInt() : 1,
+                child: Container(height: 6, color: Colors.redAccent),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -1830,6 +1864,30 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
           ),
         ),
       ],
+    );
+  }
+
+  void _deleteTransaction(Map<String, dynamic> tx) {
+    final index = _transactions.indexOf(tx);
+    if (index == -1) return;
+
+    setState(() {
+      _transactions.removeAt(index);
+    });
+
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Transakcija izbrisana'),
+        action: SnackBarAction(
+          label: 'Poništi',
+          onPressed: () {
+            setState(() {
+              _transactions.insert(index, tx);
+            });
+          },
+        ),
+      ),
     );
   }
 
@@ -1961,8 +2019,22 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
 
   Widget _buildTransactionTile(Map<String, dynamic> tx) {
     final bool isIncome = tx['amount'] > 0;
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+    return Dismissible(
+      key: UniqueKey(),
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.redAccent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 24),
+        child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
+      ),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) => _deleteTransaction(tx),
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
       color: Theme.of(context).cardColor,
       shape: RoundedRectangleBorder(
@@ -2001,6 +2073,6 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
           ),
         ),
       ),
-    );
+    ));
   }
 }
