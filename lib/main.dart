@@ -141,6 +141,39 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     ];
   }
 
+  Widget _buildDrawerItem({
+    required int index,
+    required IconData icon,
+    required String title,
+  }) {
+    final isSelected = _selectedIndex == index;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: ListTile(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        selected: isSelected,
+        selectedTileColor: Theme.of(context).colorScheme.primaryContainer,
+        leading: Icon(
+          icon,
+          color: isSelected ? Theme.of(context).colorScheme.primary : null,
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            color: isSelected ? Theme.of(context).colorScheme.primary : null,
+          ),
+        ),
+        onTap: () {
+          setState(() => _selectedIndex = index);
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -185,63 +218,14 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                 ),
               ),
             ),
-            ListTile(
-              leading: const Icon(Icons.calculate),
-              title: const Text('1. Old Counter App'),
-              onTap: () {
-                setState(() => _selectedIndex = 0);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.list_alt),
-              title: const Text('2. Todo List (State Test)'),
-              onTap: () {
-                setState(() => _selectedIndex = 1);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.cloud_download),
-              title: const Text('3. API Fetching (JSON)'),
-              onTap: () {
-                setState(() => _selectedIndex = 2);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.animation),
-              title: const Text('4. Animations & UI'),
-              onTap: () {
-                setState(() => _selectedIndex = 3);
-                Navigator.pop(context);
-              },
-            ),
+            _buildDrawerItem(index: 0, icon: Icons.calculate, title: '1. Old Counter App'),
+            _buildDrawerItem(index: 1, icon: Icons.list_alt, title: '2. Todo List (State Test)'),
+            _buildDrawerItem(index: 2, icon: Icons.cloud_download, title: '3. API Fetching (JSON)'),
+            _buildDrawerItem(index: 3, icon: Icons.animation, title: '4. Animations & UI'),
             const Divider(),
-            ListTile(
-              leading: const Icon(Icons.calculate),
-              title: const Text('5. Tip Calculator 💰'),
-              onTap: () {
-                setState(() => _selectedIndex = 4);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.account_balance_wallet),
-              title: const Text('6. Finance Dashboard 📈'),
-              onTap: () {
-                setState(() => _selectedIndex = 5);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('7. Settings ⚙️'),
-              onTap: () {
-                setState(() => _selectedIndex = 6);
-                Navigator.pop(context);
-              },
-            ),
+            _buildDrawerItem(index: 4, icon: Icons.calculate, title: '5. Tip Calculator 💰'),
+            _buildDrawerItem(index: 5, icon: Icons.account_balance_wallet, title: '6. Finance Dashboard 📈'),
+            _buildDrawerItem(index: 6, icon: Icons.settings, title: '7. Settings ⚙️'),
           ],
         ),
       ),
@@ -303,17 +287,29 @@ class _CounterAppOldState extends State<CounterAppOld> {
           ),
           const SizedBox(height: 20),
           Card(
-            elevation: 4,
+            elevation: 8,
             shadowColor: Colors.deepPurple.withOpacity(0.4),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(24),
             ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: 50.0,
-                horizontal: 40.0,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).cardColor,
+                    Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
               ),
-              child: Column(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 50.0,
+                  horizontal: 40.0,
+                ),
+                child: Column(
                 children: [
                   Text(
                     'Brojač: $brojac',
@@ -331,6 +327,10 @@ class _CounterAppOldState extends State<CounterAppOld> {
                         onPressed: _smanji,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.redAccent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          padding: const EdgeInsets.all(16),
                         ),
                         child: const Icon(Icons.remove, color: Colors.white),
                       ),
@@ -338,19 +338,24 @@ class _CounterAppOldState extends State<CounterAppOld> {
                         onPressed: _povecaj,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          padding: const EdgeInsets.all(16),
                         ),
                         child: const Icon(Icons.add, color: Colors.white),
                       ),
                     ],
                   ),
                   const SizedBox(height: 20),
-                  if (brojac != 0) // if unutar builda! (naucio u mjesecu 2)
-                    TextButton.icon(
-                      onPressed: _resetuj,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Resetuj'),
-                    ),
-                ],
+                    if (brojac != 0) // if unutar builda! (naucio u mjesecu 2)
+                      TextButton.icon(
+                        onPressed: _resetuj,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Resetuj'),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -423,20 +428,39 @@ class _TodoListScreenState extends State<TodoListScreen> {
           child: Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: _textController,
-                  decoration: InputDecoration(
-                    hintText: 'Unesi novi task...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  onSubmitted: (_) => _addTask(),
+                  child: TextField(
+                    controller: _textController,
+                    decoration: InputDecoration(
+                      hintText: 'Unesi novi task...',
+                      filled: true,
+                      fillColor: Theme.of(context).cardColor,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    ),
+                    onSubmitted: (_) => _addTask(),
+                  ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               FloatingActionButton(
                 onPressed: _addTask,
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 child: const Icon(Icons.add),
               ),
             ],
@@ -473,9 +497,8 @@ class _TodoListScreenState extends State<TodoListScreen> {
                       vertical: 4,
                     ),
                     leading: Checkbox(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
+                      shape: const CircleBorder(),
+                      activeColor: Colors.deepPurple,
                       value: task['done'],
                       onChanged: (bool? value) {
                         setState(() {
