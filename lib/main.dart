@@ -1793,20 +1793,27 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
           'Odnos Prihoda i Rashoda',
           style: TextStyle(color: Colors.white54, fontSize: 11),
         ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: Row(
-            children: [
-              Expanded(
-                flex: (incomePercentage * 100).toInt() > 0 ? (incomePercentage * 100).toInt() : 1,
-                child: Container(height: 6, color: Colors.greenAccent),
-              ),
-              Expanded(
-                flex: ((1 - incomePercentage) * 100).toInt() > 0 ? ((1 - incomePercentage) * 100).toInt() : 1,
-                child: Container(height: 6, color: Colors.redAccent),
-              ),
-            ],
+        const SizedBox(height: 8),
+        Container(
+          height: 8,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: Colors.white.withOpacity(0.2),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: (incomePercentage * 100).toInt() > 0 ? (incomePercentage * 100).toInt() : 1,
+                  child: Container(color: Colors.greenAccent),
+                ),
+                Expanded(
+                  flex: ((1 - incomePercentage) * 100).toInt() > 0 ? ((1 - incomePercentage) * 100).toInt() : 1,
+                  child: Container(color: Colors.redAccent),
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -1869,8 +1876,15 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-            shape: BoxShape.circle,
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Icon(
             icon,
@@ -1878,7 +1892,7 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
             size: 28,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Text(
           label,
           style: TextStyle(
@@ -1947,8 +1961,11 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
                     controller: titleController,
                     decoration: InputDecoration(
                       labelText: 'Naziv (npr. Plata, Kafa)',
+                      filled: true,
+                      fillColor: Theme.of(context).cardColor,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
                       ),
                     ),
                   ),
@@ -1960,22 +1977,27 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
                     ),
                     decoration: InputDecoration(
                       labelText: 'Iznos',
+                      filled: true,
+                      fillColor: Theme.of(context).cardColor,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
                       ),
                       prefixText: '\$ ',
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
                         'Tip transakcije:',
-                        style: TextStyle(fontSize: 16),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       ToggleButtons(
                         borderRadius: BorderRadius.circular(12),
+                        fillColor: isIncome ? Colors.green.withOpacity(0.15) : Colors.red.withOpacity(0.15),
+                        selectedColor: isIncome ? Colors.green : Colors.red,
                         isSelected: [isIncome, !isIncome],
                         onPressed: (index) {
                           setModalState(() {
@@ -1985,11 +2007,11 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
                         children: const [
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Text('Prihod'),
+                            child: Row(children: [Icon(Icons.arrow_downward, size: 16), SizedBox(width: 4), Text('Prihod')]),
                           ),
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Text('Rashod'),
+                            child: Row(children: [Icon(Icons.arrow_upward, size: 16), SizedBox(width: 4), Text('Rashod')]),
                           ),
                         ],
                       ),
