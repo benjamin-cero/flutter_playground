@@ -3,26 +3,29 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-// import 'package:provider/provider.dart'; // skontati kako ovo radi poslije
+import 'package:provider/provider.dart';
 
-void main() {
-  runApp(const MyApp());
+// ---------------------------------------------------------
+// BAZNE KLASE & PROVIDER (Za pocetnike)
+// ---------------------------------------------------------
+abstract class BaseProvider extends ChangeNotifier {
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
+
+  void setLoading(bool value) {
+    _isLoading = value;
+    notifyListeners();
+  }
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
+class SettingsProvider extends BaseProvider {
   ThemeMode _themeMode = ThemeMode.system;
   double _fontSize = 16.0;
 
-  @override
-  void initState() {
-    super.initState();
+  ThemeMode get themeMode => _themeMode;
+  double get fontSize => _fontSize;
+
+  SettingsProvider() {
     _loadSettings();
   }
 
@@ -30,30 +33,42 @@ class _MyAppState extends State<MyApp> {
     final prefs = await SharedPreferences.getInstance();
     final isDark = prefs.getBool('isDarkMode') ?? false;
     final fontSize = prefs.getDouble('fontSize') ?? 16.0;
-    setState(() {
-      _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
-      _fontSize = fontSize;
-    });
+    _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+    _fontSize = fontSize;
+    notifyListeners();
   }
 
-  Future<void> _changeTheme(ThemeMode mode) async {
+  Future<void> changeTheme(ThemeMode mode) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isDarkMode', mode == ThemeMode.dark);
-    setState(() {
-      _themeMode = mode;
-    });
+    _themeMode = mode;
+    notifyListeners();
   }
 
-  Future<void> _changeFontSize(double size) async {
+  Future<void> changeFontSize(double size) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('fontSize', size);
-    setState(() {
-      _fontSize = size;
-    });
+    _fontSize = size;
+    notifyListeners();
   }
+}
+
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => SettingsProvider(),
+      child: const MyApp(),
+    ),
+  );
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final settings = context.watch<SettingsProvider>();
     return MaterialApp(
       title: 'Moj Flutter Playground',
       theme: ThemeData(
@@ -69,12 +84,8 @@ class _MyAppState extends State<MyApp> {
         colorSchemeSeed: Colors.deepPurple,
         brightness: Brightness.dark,
       ),
-      themeMode: _themeMode,
-      home: MainMenuScreen(
-        onThemeChanged: _changeTheme,
-        fontSize: _fontSize,
-        onFontSizeChanged: _changeFontSize,
-      ),
+      themeMode: settings.themeMode,
+      home: const MainMenuScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -84,16 +95,7 @@ class _MyAppState extends State<MyApp> {
 // MAIN MENU (Dodao nakon mjesec dana jer je bilo previse stvari)
 // ---------------------------------------------------------
 class MainMenuScreen extends StatefulWidget {
-  final Function(ThemeMode) onThemeChanged;
-  final double fontSize;
-  final Function(double) onFontSizeChanged;
-
-  const MainMenuScreen({
-    super.key,
-    required this.onThemeChanged,
-    required this.fontSize,
-    required this.onFontSizeChanged,
-  });
+  const MainMenuScreen({super.key});
 
   @override
   State<MainMenuScreen> createState() => _MainMenuScreenState();
@@ -102,44 +104,15 @@ class MainMenuScreen extends StatefulWidget {
 class _MainMenuScreenState extends State<MainMenuScreen> {
   int _selectedIndex = 0;
 
-  late List<Widget> _screens;
-
-  @override
-  void initState() {
-    super.initState();
-    _screens = [
-      const CounterAppOld(fontSize: 16.0), // moj prvi app
-      const TodoListScreen(fontSize: 16.0), // vjezbao liste
-      const ApiTestScreen(fontSize: 16.0), // ucio HTTP requeste (ubilo me)
-      const AnimationPlayground(fontSize: 16.0), // kul animacije
-      const TipCalculatorScreen(fontSize: 16.0), // Tip Calculator
-      const FinanceDashboardScreen(fontSize: 16.0), // NOVO: Finance Dashboard
-      SettingsScreen(
-        onThemeChanged: widget.onThemeChanged,
-        onFontSizeChanged: widget.onFontSizeChanged,
-        fontSize: widget.fontSize,
-      ), // settings
-    ];
-  }
-
-  @override
-  void didUpdateWidget(MainMenuScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Rebuild screens kada se fontSize promijeni
-    _screens = [
-      CounterAppOld(fontSize: widget.fontSize),
-      TodoListScreen(fontSize: widget.fontSize),
-      ApiTestScreen(fontSize: widget.fontSize),
-      AnimationPlayground(fontSize: widget.fontSize),
-      TipCalculatorScreen(fontSize: widget.fontSize),
-      FinanceDashboardScreen(fontSize: widget.fontSize),
-      SettingsScreen(
-        onThemeChanged: widget.onThemeChanged,
-        onFontSizeChanged: widget.onFontSizeChanged,
-        fontSize: widget.fontSize,
-      ),
-    ];
-  }
+  final List<Widget> _screens = const [
+    CounterAppOld(), // moj prvi app
+    TodoListScreen(), // vjezbao liste
+    ApiTestScreen(), // ucio HTTP requeste (ubilo me)
+    AnimationPlayground(), // kul animacije
+    TipCalculatorScreen(), // Tip Calculator
+    FinanceDashboardScreen(), // NOVO: Finance Dashboard
+    SettingsScreen(), // settings
+  ];
 
   Widget _buildDrawerItem({
     required int index,
@@ -150,9 +123,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: ListTile(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         selected: isSelected,
         selectedTileColor: Theme.of(context).colorScheme.primaryContainer,
         leading: Icon(
@@ -218,14 +189,42 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                 ),
               ),
             ),
-            _buildDrawerItem(index: 0, icon: Icons.calculate, title: '1. Old Counter App'),
-            _buildDrawerItem(index: 1, icon: Icons.list_alt, title: '2. Todo List (State Test)'),
-            _buildDrawerItem(index: 2, icon: Icons.cloud_download, title: '3. API Fetching (JSON)'),
-            _buildDrawerItem(index: 3, icon: Icons.animation, title: '4. Animations & UI'),
+            _buildDrawerItem(
+              index: 0,
+              icon: Icons.calculate,
+              title: '1. Old Counter App',
+            ),
+            _buildDrawerItem(
+              index: 1,
+              icon: Icons.list_alt,
+              title: '2. Todo List (State Test)',
+            ),
+            _buildDrawerItem(
+              index: 2,
+              icon: Icons.cloud_download,
+              title: '3. API Fetching (JSON)',
+            ),
+            _buildDrawerItem(
+              index: 3,
+              icon: Icons.animation,
+              title: '4. Animations & UI',
+            ),
             const Divider(),
-            _buildDrawerItem(index: 4, icon: Icons.calculate, title: '5. Tip Calculator 💰'),
-            _buildDrawerItem(index: 5, icon: Icons.account_balance_wallet, title: '6. Finance Dashboard 📈'),
-            _buildDrawerItem(index: 6, icon: Icons.settings, title: '7. Settings ⚙️'),
+            _buildDrawerItem(
+              index: 4,
+              icon: Icons.calculate,
+              title: '5. Tip Calculator 💰',
+            ),
+            _buildDrawerItem(
+              index: 5,
+              icon: Icons.account_balance_wallet,
+              title: '6. Finance Dashboard 📈',
+            ),
+            _buildDrawerItem(
+              index: 6,
+              icon: Icons.settings,
+              title: '7. Settings ⚙️',
+            ),
           ],
         ),
       ),
@@ -276,6 +275,7 @@ class _CounterAppOldState extends State<CounterAppOld> {
 
   @override
   Widget build(BuildContext context) {
+    final fontSize = context.watch<SettingsProvider>().fontSize;
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -298,7 +298,9 @@ class _CounterAppOldState extends State<CounterAppOld> {
                 gradient: LinearGradient(
                   colors: [
                     Theme.of(context).cardColor,
-                    Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+                    Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer.withOpacity(0.3),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -310,44 +312,44 @@ class _CounterAppOldState extends State<CounterAppOld> {
                   horizontal: 40.0,
                 ),
                 child: Column(
-                children: [
-                  Text(
-                    'Brojač: $brojac',
-                    style: TextStyle(
-                      fontSize: widget.fontSize + 16,
-                      color: farba,
-                      fontWeight: FontWeight.bold,
+                  children: [
+                    Text(
+                      'Brojač: $brojac',
+                      style: TextStyle(
+                        fontSize: fontSize + 16,
+                        color: farba,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      ElevatedButton(
-                        onPressed: _smanji,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.redAccent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton(
+                          onPressed: _smanji,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.redAccent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            padding: const EdgeInsets.all(16),
                           ),
-                          padding: const EdgeInsets.all(16),
+                          child: const Icon(Icons.remove, color: Colors.white),
                         ),
-                        child: const Icon(Icons.remove, color: Colors.white),
-                      ),
-                      ElevatedButton(
-                        onPressed: _povecaj,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                        ElevatedButton(
+                          onPressed: _povecaj,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            padding: const EdgeInsets.all(16),
                           ),
-                          padding: const EdgeInsets.all(16),
+                          child: const Icon(Icons.add, color: Colors.white),
                         ),
-                        child: const Icon(Icons.add, color: Colors.white),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
                     if (brojac != 0) // if unutar builda! (naucio u mjesecu 2)
                       TextButton.icon(
                         onPressed: _resetuj,
@@ -383,7 +385,8 @@ class _TodoListScreenState extends State<TodoListScreen> {
   List<Map<String, dynamic>> tasks = [
     {'title': 'Nauci stateless widgete', 'done': true},
     {'title': 'Nauci stateful widgete', 'done': true},
-    {'title': 'Skontaj kako radi Provider', 'done': true}, // TODO!
+    {'title': 'Skontaj kako radi Provider', 'done': true},
+    {'title': 'Nauci bazne klase (OOP)', 'done': true},
     {'title': 'Napravi portfolio aplikaciju', 'done': true},
   ];
 
@@ -421,6 +424,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final fontSize = context.watch<SettingsProvider>().fontSize;
     return Column(
       children: [
         Padding(
@@ -448,7 +452,10 @@ class _TodoListScreenState extends State<TodoListScreen> {
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide.none,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
                     ),
                     onSubmitted: (_) => _addTask(),
                   ),
@@ -509,7 +516,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
                     title: Text(
                       task['title'],
                       style: TextStyle(
-                        fontSize: widget.fontSize,
+                        fontSize: fontSize,
                         fontWeight: FontWeight.w500,
                         decoration: task['done']
                             ? TextDecoration.lineThrough
@@ -622,29 +629,49 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final fontSize = context.watch<SettingsProvider>().fontSize;
     return _isLoading
         ? ListView.separated(
             itemCount: 6,
             separatorBuilder: (_, __) => const Divider(),
             itemBuilder: (context, _) {
-              final baseColor = Theme.of(context).disabledColor.withOpacity(0.1);
-              final highlightColor = Theme.of(context).disabledColor.withOpacity(0.05);
+              final baseColor = Theme.of(
+                context,
+              ).disabledColor.withOpacity(0.1);
+              final highlightColor = Theme.of(
+                context,
+              ).disabledColor.withOpacity(0.05);
               return ListTile(
-                leading: CircleAvatar(
-                  radius: 25,
-                  backgroundColor: baseColor,
-                ),
+                leading: CircleAvatar(radius: 25, backgroundColor: baseColor),
                 title: Container(
                   height: 16,
                   width: 150,
-                  decoration: BoxDecoration(color: baseColor, borderRadius: BorderRadius.circular(4)),
+                  decoration: BoxDecoration(
+                    color: baseColor,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                   margin: const EdgeInsets.only(bottom: 8, right: 100),
                 ),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(height: 12, width: 200, decoration: BoxDecoration(color: highlightColor, borderRadius: BorderRadius.circular(4)), margin: const EdgeInsets.only(bottom: 4)),
-                    Container(height: 12, width: 120, decoration: BoxDecoration(color: highlightColor, borderRadius: BorderRadius.circular(4))),
+                    Container(
+                      height: 12,
+                      width: 200,
+                      decoration: BoxDecoration(
+                        color: highlightColor,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      margin: const EdgeInsets.only(bottom: 4),
+                    ),
+                    Container(
+                      height: 12,
+                      width: 120,
+                      decoration: BoxDecoration(
+                        color: highlightColor,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
                   ],
                 ),
               );
@@ -690,7 +717,7 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                   title: Text(
                     '${user.firstName} ${user.lastName}',
                     style: TextStyle(
-                      fontSize: widget.fontSize + 2,
+                      fontSize: fontSize + 2,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -780,9 +807,7 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                                       color: Colors.deepPurple,
                                     ),
                                     title: Text(user.city),
-                                    subtitle: Text(
-                                      user.address,
-                                    ),
+                                    subtitle: Text(user.address),
                                   ),
                                   const SizedBox(height: 16),
                                   ElevatedButton(
@@ -839,6 +864,7 @@ class _AnimationPlaygroundState extends State<AnimationPlayground>
 
   @override
   Widget build(BuildContext context) {
+    final fontSize = context.watch<SettingsProvider>().fontSize;
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -880,7 +906,7 @@ class _AnimationPlaygroundState extends State<AnimationPlayground>
                   child: Text(
                     _isExpanded ? 'Klikni me opet!' : 'Klikni me!',
                     style: TextStyle(
-                      fontSize: widget.fontSize,
+                      fontSize: fontSize,
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
@@ -981,16 +1007,7 @@ class WaveClipper extends CustomClipper<Path> {
 // 5. SETTINGS SCREEN (Konačno radi!)
 // ---------------------------------------------------------
 class SettingsScreen extends StatefulWidget {
-  final Function(ThemeMode) onThemeChanged;
-  final Function(double) onFontSizeChanged;
-  final double fontSize;
-
-  const SettingsScreen({
-    super.key,
-    required this.onThemeChanged,
-    required this.onFontSizeChanged,
-    required this.fontSize,
-  });
+  const SettingsScreen({super.key});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -1026,6 +1043,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final fontSize = context.watch<SettingsProvider>().fontSize;
     if (!_isLoaded) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -1077,7 +1095,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onChanged: (ThemeMode? value) {
                         if (value != null) {
                           setState(() => _selectedTheme = value);
-                          widget.onThemeChanged(value);
+                          context.read<SettingsProvider>().changeTheme(value);
                         }
                       },
                     ),
@@ -1088,7 +1106,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onChanged: (ThemeMode? value) {
                         if (value != null) {
                           setState(() => _selectedTheme = value);
-                          widget.onThemeChanged(value);
+                          context.read<SettingsProvider>().changeTheme(value);
                         }
                       },
                     ),
@@ -1127,19 +1145,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 12),
                     Slider(
-                      value: widget.fontSize,
+                      value: fontSize,
                       min: 12,
                       max: 24,
                       divisions: 6,
-                      label: widget.fontSize.toStringAsFixed(0),
+                      label: fontSize.toStringAsFixed(0),
                       onChanged: (value) {
-                        widget.onFontSizeChanged(value);
+                        context.read<SettingsProvider>().changeFontSize(value);
                       },
                     ),
                     Center(
                       child: Text(
                         'Preview teksta',
-                        style: TextStyle(fontSize: widget.fontSize),
+                        style: TextStyle(fontSize: fontSize),
                       ),
                     ),
                   ],
@@ -1292,6 +1310,7 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final fontSize = context.watch<SettingsProvider>().fontSize;
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -1301,7 +1320,7 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
             Text(
               'Napojnica i Račun 😎',
               style: TextStyle(
-                fontSize: widget.fontSize + 4,
+                fontSize: fontSize + 4,
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
@@ -1350,7 +1369,7 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
                 Text(
                   'Napojnica:',
                   style: TextStyle(
-                    fontSize: widget.fontSize,
+                    fontSize: fontSize,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -1368,7 +1387,7 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
                   child: Text(
                     '${_tipPercentage.toInt()}%',
                     style: TextStyle(
-                      fontSize: widget.fontSize,
+                      fontSize: fontSize,
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.primary,
                     ),
@@ -1396,7 +1415,7 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
                 Text(
                   'Broj osoba (Split):',
                   style: TextStyle(
-                    fontSize: widget.fontSize,
+                    fontSize: fontSize,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -1414,7 +1433,7 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
                   child: Text(
                     '$_splitCount',
                     style: TextStyle(
-                      fontSize: widget.fontSize,
+                      fontSize: fontSize,
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.secondary,
                     ),
@@ -1465,14 +1484,14 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
                           Text(
                             'Samo napojnica:',
                             style: TextStyle(
-                              fontSize: widget.fontSize,
+                              fontSize: fontSize,
                               color: Colors.white70,
                             ),
                           ),
                           Text(
                             '${_tipAmount.toStringAsFixed(2)} KM',
                             style: TextStyle(
-                              fontSize: widget.fontSize,
+                              fontSize: fontSize,
                               fontWeight: FontWeight.w600,
                               color: Colors.white,
                             ),
@@ -1489,7 +1508,7 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
                           Text(
                             'Ukupno:',
                             style: TextStyle(
-                              fontSize: widget.fontSize + 2,
+                              fontSize: fontSize + 2,
                               fontWeight: FontWeight.w500,
                               color: Colors.white,
                             ),
@@ -1497,7 +1516,7 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
                           Text(
                             '${_totalAmount.toStringAsFixed(2)} KM',
                             style: TextStyle(
-                              fontSize: widget.fontSize + 4,
+                              fontSize: fontSize + 4,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
@@ -1523,7 +1542,7 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
                                 Text(
                                   'Po osobi:',
                                   style: TextStyle(
-                                    fontSize: widget.fontSize + 2,
+                                    fontSize: fontSize + 2,
                                     fontWeight: FontWeight.w500,
                                     color: Colors.white,
                                   ),
@@ -1533,7 +1552,7 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
                             Text(
                               '${(_totalAmount / _splitCount).toStringAsFixed(2)} KM',
                               style: TextStyle(
-                                fontSize: widget.fontSize + 6,
+                                fontSize: fontSize + 6,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
@@ -1554,6 +1573,36 @@ class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
 }
 
 // ---------------------------------------------------------
+// BAZNE KLASE ZA MODELE
+// ---------------------------------------------------------
+abstract class FinanceItem {
+  final String title;
+  final double amount;
+  final String category;
+
+  FinanceItem({
+    required this.title,
+    required this.amount,
+    required this.category,
+  });
+
+  bool get isIncome => amount > 0;
+}
+
+class TransactionModel extends FinanceItem {
+  final IconData icon;
+  final Color color;
+
+  TransactionModel({
+    required super.title,
+    required super.amount,
+    required super.category,
+    required this.icon,
+    required this.color,
+  });
+}
+
+// ---------------------------------------------------------
 // 7. FINANCE DASHBOARD (Portfolio / Posao ready UI)
 // ---------------------------------------------------------
 class FinanceDashboardScreen extends StatefulWidget {
@@ -1571,60 +1620,62 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  // Mock podaci za transakcije
-  final List<Map<String, dynamic>> _transactions = [
-    {
-      'title': 'Početno stanje',
-      'category': 'Ušteđevina',
-      'amount': 3794.19,
-      'icon': Icons.account_balance,
-      'color': Colors.teal,
-    },
-    {
-      'title': 'Dribbble Pro',
-      'category': 'Pretplata',
-      'amount': -15.00,
-      'icon': Icons.design_services,
-      'color': Colors.pink,
-    },
-    {
-      'title': 'Plata (Freelance)',
-      'category': 'Prihod',
-      'amount': 1250.00,
-      'icon': Icons.work_outline,
-      'color': Colors.green,
-    },
-    {
-      'title': 'Kafa sa klijentom',
-      'category': 'Hrana & Piće',
-      'amount': -8.50,
-      'icon': Icons.local_cafe,
-      'color': Colors.orange,
-    },
-    {
-      'title': 'Supermarket',
-      'category': 'Namirnice',
-      'amount': -145.20,
-      'icon': Icons.shopping_cart,
-      'color': Colors.blue,
-    },
-    {
-      'title': 'Udemy Kurs',
-      'category': 'Edukacija',
-      'amount': -24.99,
-      'icon': Icons.menu_book,
-      'color': Colors.purple,
-    },
+  double get fontSize => context.read<SettingsProvider>().fontSize;
+
+  // Mock podaci za transakcije koristeci nasu novu TransactionModel klasu
+  final List<TransactionModel> _transactions = [
+    TransactionModel(
+      title: 'Početno stanje',
+      category: 'Ušteđevina',
+      amount: 3794.19,
+      icon: Icons.account_balance,
+      color: Colors.teal,
+    ),
+    TransactionModel(
+      title: 'Dribbble Pro',
+      category: 'Pretplata',
+      amount: -15.00,
+      icon: Icons.design_services,
+      color: Colors.pink,
+    ),
+    TransactionModel(
+      title: 'Plata (Freelance)',
+      category: 'Prihod',
+      amount: 1250.00,
+      icon: Icons.work_outline,
+      color: Colors.green,
+    ),
+    TransactionModel(
+      title: 'Kafa sa klijentom',
+      category: 'Hrana & Piće',
+      amount: -8.50,
+      icon: Icons.local_cafe,
+      color: Colors.orange,
+    ),
+    TransactionModel(
+      title: 'Supermarket',
+      category: 'Namirnice',
+      amount: -145.20,
+      icon: Icons.shopping_cart,
+      color: Colors.blue,
+    ),
+    TransactionModel(
+      title: 'Udemy Kurs',
+      category: 'Edukacija',
+      amount: -24.99,
+      icon: Icons.menu_book,
+      color: Colors.purple,
+    ),
   ];
 
   double get _totalBalance =>
-      _transactions.fold(0.0, (sum, item) => sum + item['amount']);
+      _transactions.fold(0.0, (sum, item) => sum + item.amount);
   double get _totalIncome => _transactions
-      .where((item) => (item['amount'] as double) > 0)
-      .fold(0.0, (sum, item) => sum + item['amount']);
+      .where((item) => item.amount > 0)
+      .fold(0.0, (sum, item) => sum + item.amount);
   double get _totalExpense => _transactions
-      .where((item) => (item['amount'] as double) < 0)
-      .fold(0.0, (sum, item) => sum + item['amount']);
+      .where((item) => item.amount < 0)
+      .fold(0.0, (sum, item) => sum + item.amount);
 
   @override
   void initState() {
@@ -1656,6 +1707,7 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    final fontSize = context.watch<SettingsProvider>().fontSize;
     return Stack(
       children: [
         SingleChildScrollView(
@@ -1687,7 +1739,7 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
                   Text(
                     'Nedavne Transakcije',
                     style: TextStyle(
-                      fontSize: widget.fontSize + 2,
+                      fontSize: fontSize + 2,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -1751,7 +1803,7 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
             '\$ ${_totalBalance.toStringAsFixed(2)}',
             style: TextStyle(
               color: Colors.white,
-              fontSize: widget.fontSize + 22,
+              fontSize: fontSize + 22,
               fontWeight: FontWeight.bold,
               letterSpacing: 1.2,
             ),
@@ -1785,7 +1837,7 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
     if (_totalIncome == 0 && _totalExpense == 0) return const SizedBox.shrink();
     final totalAmount = _totalIncome + _totalExpense.abs();
     final incomePercentage = totalAmount > 0 ? _totalIncome / totalAmount : 0.0;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1805,11 +1857,15 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
             child: Row(
               children: [
                 Expanded(
-                  flex: (incomePercentage * 100).toInt() > 0 ? (incomePercentage * 100).toInt() : 1,
+                  flex: (incomePercentage * 100).toInt() > 0
+                      ? (incomePercentage * 100).toInt()
+                      : 1,
                   child: Container(color: Colors.greenAccent),
                 ),
                 Expanded(
-                  flex: ((1 - incomePercentage) * 100).toInt() > 0 ? ((1 - incomePercentage) * 100).toInt() : 1,
+                  flex: ((1 - incomePercentage) * 100).toInt() > 0
+                      ? ((1 - incomePercentage) * 100).toInt()
+                      : 1,
                   child: Container(color: Colors.redAccent),
                 ),
               ],
@@ -1895,16 +1951,13 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
         const SizedBox(height: 10),
         Text(
           label,
-          style: TextStyle(
-            fontSize: widget.fontSize - 4,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: fontSize - 4, fontWeight: FontWeight.w600),
         ),
       ],
     );
   }
 
-  void _deleteTransaction(Map<String, dynamic> tx) {
+  void _deleteTransaction(TransactionModel tx) {
     final index = _transactions.indexOf(tx);
     if (index == -1) return;
 
@@ -1992,11 +2045,16 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
                     children: [
                       const Text(
                         'Tip transakcije:',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       ToggleButtons(
                         borderRadius: BorderRadius.circular(12),
-                        fillColor: isIncome ? Colors.green.withOpacity(0.15) : Colors.red.withOpacity(0.15),
+                        fillColor: isIncome
+                            ? Colors.green.withOpacity(0.15)
+                            : Colors.red.withOpacity(0.15),
                         selectedColor: isIncome ? Colors.green : Colors.red,
                         isSelected: [isIncome, !isIncome],
                         onPressed: (index) {
@@ -2007,11 +2065,23 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
                         children: const [
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(children: [Icon(Icons.arrow_downward, size: 16), SizedBox(width: 4), Text('Prihod')]),
+                            child: Row(
+                              children: [
+                                Icon(Icons.arrow_downward, size: 16),
+                                SizedBox(width: 4),
+                                Text('Prihod'),
+                              ],
+                            ),
                           ),
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(children: [Icon(Icons.arrow_upward, size: 16), SizedBox(width: 4), Text('Rashod')]),
+                            child: Row(
+                              children: [
+                                Icon(Icons.arrow_upward, size: 16),
+                                SizedBox(width: 4),
+                                Text('Rashod'),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -2035,17 +2105,20 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
 
                       if (title.isNotEmpty && amount > 0) {
                         setState(() {
-                          _transactions.insert(1, {
-                            'title': title,
-                            'category': isIncome
-                                ? 'Ostali Prihodi'
-                                : 'Ostali Rashodi',
-                            'amount': isIncome ? amount : -amount,
-                            'icon': isIncome
-                                ? Icons.account_balance_wallet
-                                : Icons.shopping_basket,
-                            'color': isIncome ? Colors.green : Colors.redAccent,
-                          });
+                          _transactions.insert(
+                            1,
+                            TransactionModel(
+                              title: title,
+                              category: isIncome
+                                  ? 'Ostali Prihodi'
+                                  : 'Ostali Rashodi',
+                              amount: isIncome ? amount : -amount,
+                              icon: isIncome
+                                  ? Icons.account_balance_wallet
+                                  : Icons.shopping_basket,
+                              color: isIncome ? Colors.green : Colors.redAccent,
+                            ),
+                          );
                         });
                         Navigator.pop(context);
                       }
@@ -2062,8 +2135,8 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
     );
   }
 
-  Widget _buildTransactionTile(Map<String, dynamic> tx) {
-    final bool isIncome = tx['amount'] > 0;
+  Widget _buildTransactionTile(TransactionModel tx) {
+    final bool isIncome = tx.isIncome;
     return Dismissible(
       key: UniqueKey(),
       background: Container(
@@ -2080,44 +2153,42 @@ class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
       onDismissed: (_) => _deleteTransaction(tx),
       child: Card(
         margin: const EdgeInsets.only(bottom: 12),
-      elevation: 0,
-      color: Theme.of(context).cardColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.withOpacity(0.1)),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: (tx['color'] as Color).withOpacity(0.15),
-            borderRadius: BorderRadius.circular(12),
+        elevation: 0,
+        color: Theme.of(context).cardColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+        ),
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
           ),
-          child: Icon(tx['icon'], color: tx['color']),
-        ),
-        title: Text(
-          tx['title'],
-          style: TextStyle(
-            fontSize: widget.fontSize,
-            fontWeight: FontWeight.bold,
+          leading: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: tx.color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(tx.icon, color: tx.color),
           ),
-        ),
-        subtitle: Text(
-          tx['category'],
-          style: TextStyle(fontSize: widget.fontSize - 4),
-        ),
-        trailing: Text(
-          isIncome
-              ? '+ \$${tx['amount'].toStringAsFixed(2)}'
-              : '- \$${tx['amount'].abs().toStringAsFixed(2)}',
-          style: TextStyle(
-            color: isIncome ? Colors.green : Colors.red,
-            fontWeight: FontWeight.bold,
-            fontSize: widget.fontSize,
+          title: Text(
+            tx.title,
+            style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold),
+          ),
+          subtitle: Text(tx.category, style: TextStyle(fontSize: fontSize - 4)),
+          trailing: Text(
+            isIncome
+                ? '+ \$${tx.amount.toStringAsFixed(2)}'
+                : '- \$${tx.amount.abs().toStringAsFixed(2)}',
+            style: TextStyle(
+              color: isIncome ? Colors.green : Colors.red,
+              fontWeight: FontWeight.bold,
+              fontSize: fontSize,
+            ),
           ),
         ),
       ),
-    ));
+    );
   }
 }

@@ -1,19 +1,20 @@
-import re
+import 'dart:io';
 
-def refactor_main_dart(filepath):
-    with open(filepath, 'r', encoding='utf-8') as f:
-        content = f.read()
+void main() async {
+  final filepath = r'c:\Users\jovan\Desktop\flutter_playground\lib\main.dart';
+  var file = File(filepath);
+  var content = await file.readAsString();
 
-    # 1. Imports and Todo check
-    content = content.replace("// import 'package:provider/provider.dart'; // skontati kako ovo radi poslije", "import 'package:provider/provider.dart';")
-    # Mark the provider task as done and add base classes task
-    content = content.replace(
-        "{'title': 'Skontaj kako radi Provider', 'done': true}, // TODO!",
-        "{'title': 'Skontaj kako radi Provider', 'done': true},\n    {'title': 'Nauci bazne klase (OOP)', 'done': true},"
-    )
+  content = content.replaceAll(
+      "// import 'package:provider/provider.dart'; // skontati kako ovo radi poslije",
+      "import 'package:provider/provider.dart';");
 
-    # 2. Add BaseProvider and SettingsProvider just before main()
-    provider_code = """
+  content = content.replaceAll(
+      "{'title': 'Skontaj kako radi Provider', 'done': true}, // TODO!",
+      "{'title': 'Skontaj kako radi Provider', 'done': true},\n    {'title': 'Nauci bazne klase (OOP)', 'done': true},");
+
+  final providerCode = '''
+
 // ---------------------------------------------------------
 // BAZNE KLASE & PROVIDER (Za pocetnike)
 // ---------------------------------------------------------
@@ -61,18 +62,16 @@ class SettingsProvider extends BaseProvider {
     notifyListeners();
   }
 }
+''';
 
-"""
-    content = content.replace("void main() {", provider_code + "void main() {\n  WidgetsFlutterBinding.ensureInitialized();")
+  content = content.replaceAll("void main() {",
+      "\$providerCode\nvoid main() {\n  WidgetsFlutterBinding.ensureInitialized();");
 
-    # 3. Modify runApp to use Provider
-    content = content.replace(
-        "runApp(const MyApp());",
-        "runApp(\n    ChangeNotifierProvider(\n      create: (context) => SettingsProvider(),\n      child: const MyApp(),\n    ),\n  );"
-    )
+  content = content.replaceAll(
+      "runApp(const MyApp());",
+      "runApp(\n    ChangeNotifierProvider(\n      create: (context) => SettingsProvider(),\n      child: const MyApp(),\n    ),\n  );");
 
-    # 4. Refactor MyApp to be Stateless
-    myapp_old = """class MyApp extends StatefulWidget {
+  final myappOld = '''class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
@@ -141,9 +140,9 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
     );
   }
-}"""
+}''';
 
-    myapp_new = """class MyApp extends StatelessWidget {
+  final myappNew = '''class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
@@ -169,11 +168,11 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
     );
   }
-}"""
-    content = content.replace(myapp_old, myapp_new)
+}''';
 
-    # 5. Refactor MainMenuScreen
-    main_menu_old = """class MainMenuScreen extends StatefulWidget {
+  content = content.replaceAll(myappOld, myappNew);
+
+  final mainMenuOld = '''class MainMenuScreen extends StatefulWidget {
   final Function(ThemeMode) onThemeChanged;
   final double fontSize;
   final Function(double) onFontSizeChanged;
@@ -229,9 +228,9 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
         fontSize: widget.fontSize,
       ),
     ];
-  }"""
+  }''';
 
-    main_menu_new = """class MainMenuScreen extends StatefulWidget {
+  final mainMenuNew = '''class MainMenuScreen extends StatefulWidget {
   const MainMenuScreen({super.key});
 
   @override
@@ -249,21 +248,30 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
       TipCalculatorScreen(), // Tip Calculator
       FinanceDashboardScreen(), // NOVO: Finance Dashboard
       SettingsScreen(), // settings
-  ];"""
-    content = content.replace(main_menu_old, main_menu_new)
+  ];''';
 
-    # 6. Refactor constructors for all screens to drop fontSize prop
-    # E.g. final double fontSize; => remove
-    # const CounterAppOld({super.key, this.fontSize = 16.0}); => const CounterAppOld({super.key});
-    screens = ['CounterAppOld', 'TodoListScreen', 'ApiTestScreen', 'AnimationPlayground', 'TipCalculatorScreen', 'FinanceDashboardScreen']
-    for screen in screens:
-        # Match class definition up to createState
-        pattern = rf"class {screen} extends StatefulWidget {{\s+final double fontSize;\s+const {screen}\({{super\.key, this\.fontSize = 16\.0}}\);\s+@override\s+State<{screen}> createState\(\) => _{screen}State\(\);\s+}}"
-        replacement = f"class {screen} extends StatefulWidget {{\n  const {screen}({{super.key}});\n\n  @override\n  State<{screen}> createState() => _{screen}State();\n}}"
-        content = re.sub(pattern, replacement, content, flags=re.MULTILINE)
+  content = content.replaceAll(mainMenuOld, mainMenuNew);
 
-    # Refactor SettingsScreen specifically
-    settings_old = """class SettingsScreen extends StatefulWidget {
+  final screens = [
+    'CounterAppOld',
+    'TodoListScreen',
+    'ApiTestScreen',
+    'AnimationPlayground',
+    'TipCalculatorScreen',
+    'FinanceDashboardScreen'
+  ];
+
+  for (var screen in screens) {
+    RegExp exp = RegExp('class \$screen extends StatefulWidget \\{[\\s\\S]*?const \$screen\\(\\{super\\.key, this\\.fontSize = 16\\.0\\}\\);[\\s\\S]*?@override\\s*State<\$screen> createState\\(\\).*?_\\\$screenState\\(\\);\\s+\\}', multiLine: true);
+    content = content.replaceAllMapped(exp, (m) => '''class \$screen extends StatefulWidget {
+  const \$screen({super.key});
+
+  @override
+  State<\$screen> createState() => _\${screen}State();
+}''');
+  }
+
+  final settingsOld = '''class SettingsScreen extends StatefulWidget {
   final Function(ThemeMode) onThemeChanged;
   final Function(double) onFontSizeChanged;
   final double fontSize;
@@ -277,36 +285,25 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
-}"""
-    settings_new = """class SettingsScreen extends StatefulWidget {
+}''';
+  final settingsNew = '''class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
-}"""
-    content = content.replace(settings_old, settings_new)
+}''';
+  content = content.replaceAll(settingsOld, settingsNew);
 
-    # 7. Add `final fontSize = context.watch<SettingsProvider>().fontSize;` at the start of build methods for all screens
-    # We replace `Widget build(BuildContext context) {` with the same, and then replace `widget.fontSize` with `fontSize`
-    # We'll just define `final fontSize = context.watch<SettingsProvider>().fontSize;` at the top of build in state classes.
-    state_classes = ['_CounterAppOldState', '_TodoListScreenState', '_ApiTestScreenState', '_AnimationPlaygroundState', '_TipCalculatorScreenState', '_FinanceDashboardScreenState', '_SettingsScreenState']
-    for sc in state_classes:
-        # Some build methods have `return` immediately. We need to inject the context access correctly.
-        block_find = f"Widget build(BuildContext context) {{"
-        block_repl = f"Widget build(BuildContext context) {{\n    final fontSize = context.watch<SettingsProvider>().fontSize;"
-        # This is a bit tricky since `Widget build(BuildContext context) {` appears exactly once per class.
-        # Let's target it specifically by capturing lines.
-        content = content.replace(f"  @override\n  Widget build(BuildContext context) {{", f"  @override\n  Widget build(BuildContext context) {{\n    final fontSize = context.watch<SettingsProvider>().fontSize;")
+  content = content.replaceAll('  @override\n  Widget build(BuildContext context) {',
+      '  @override\n  Widget build(BuildContext context) {\n    final fontSize = context.watch<SettingsProvider>().fontSize;');
 
-    # Fix widget.fontSize -> fontSize globally
-    content = content.replace("widget.fontSize", "fontSize")
-    
-    # SettingsScreen triggers
-    content = content.replace("widget.onThemeChanged(value);", "context.read<SettingsProvider>().changeTheme(value);")
-    content = content.replace("widget.onFontSizeChanged(value);", "context.read<SettingsProvider>().changeFontSize(value);")
+  content = content.replaceAll('widget.fontSize', 'fontSize');
 
-    # 8. Bazne klase (Finance items)
-    base_class_models = """// ---------------------------------------------------------
+  content = content.replaceAll('widget.onThemeChanged(value);', 'context.read<SettingsProvider>().changeTheme(value);');
+  content = content.replaceAll('widget.onFontSizeChanged(value);', 'context.read<SettingsProvider>().changeFontSize(value);');
+
+
+  final baseClassModels = '''// ---------------------------------------------------------
 // BAZNE KLASE ZA MODELE
 // ---------------------------------------------------------
 abstract class FinanceItem {
@@ -330,13 +327,12 @@ class TransactionModel extends FinanceItem {
     required this.icon,
     required this.color,
   });
-}
-"""
-    # put it before FinanceDashboardScreen
-    content = content.replace("// ---------------------------------------------------------\n// 7. FINANCE DASHBOARD", base_class_models + "\n// ---------------------------------------------------------\n// 7. FINANCE DASHBOARD")
+}''';
 
-    # Update FinanceDashboardScreen to use TransactionModel instead of Map<String, dynamic>
-    transactions_old = """  // Mock podaci za transakcije
+  content = content.replaceAll('// ---------------------------------------------------------\n// 7. FINANCE DASHBOARD',
+      "\$baseClassModels\n// ---------------------------------------------------------\n// 7. FINANCE DASHBOARD");
+
+  final transactionsOld = '''  // Mock podaci za transakcije
   final List<Map<String, dynamic>> _transactions = [
     {
       'title': 'Početno stanje',
@@ -380,9 +376,9 @@ class TransactionModel extends FinanceItem {
       'icon': Icons.menu_book,
       'color': Colors.purple,
     },
-  ];"""
+  ];''';
 
-    transactions_new = """  // Mock podaci za transakcije koristeci nasu novu TransactionModel klasu
+  final transactionsNew = '''  // Mock podaci za transakcije koristeci nasu novu TransactionModel klasu
   final List<TransactionModel> _transactions = [
     TransactionModel(
       title: 'Početno stanje',
@@ -426,27 +422,22 @@ class TransactionModel extends FinanceItem {
       icon: Icons.menu_book,
       color: Colors.purple,
     ),
-  ];"""
-    content = content.replace(transactions_old, transactions_new)
+  ];''';
 
-    # Fix usages: item['amount'] -> item.amount
-    content = content.replace("item['amount']", "item.amount")
-    
-    # Fix parameter to be TransactionModel instead of Map<String, dynamic>
-    content = content.replace("void _deleteTransaction(Map<String, dynamic> tx)", "void _deleteTransaction(TransactionModel tx)")
-    content = content.replace("Widget _buildTransactionTile(Map<String, dynamic> tx)", "Widget _buildTransactionTile(TransactionModel tx)")
+  content = content.replaceAll(transactionsOld, transactionsNew);
+  content = content.replaceAll("item['amount']", "item.amount");
+  content = content.replaceAll("void _deleteTransaction(Map<String, dynamic> tx)", "void _deleteTransaction(TransactionModel tx)");
+  content = content.replaceAll("Widget _buildTransactionTile(Map<String, dynamic> tx)", "Widget _buildTransactionTile(TransactionModel tx)");
 
-    # Fix tile references: tx['title'] -> tx.title, etc.
-    content = content.replace("tx['amount'] > 0", "tx.isIncome") # Since we have isIncome!
-    content = content.replace("(tx['color'] as Color)", "tx.color")
-    content = content.replace("tx['icon']", "tx.icon")
-    content = content.replace("tx['color']", "tx.color")
-    content = content.replace("tx['title']", "tx.title")
-    content = content.replace("tx['category']", "tx.category")
-    content = content.replace("tx['amount']", "tx.amount")
+  content = content.replaceAll("tx['amount'] > 0", "tx.isIncome");
+  content = content.replaceAll("(tx['color'] as Color)", "tx.color");
+  content = content.replaceAll("tx['icon']", "tx.icon");
+  content = content.replaceAll("tx['color']", "tx.color");
+  content = content.replaceAll("tx['title']", "tx.title");
+  content = content.replaceAll("tx['category']", "tx.category");
+  content = content.replaceAll("tx['amount']", "tx.amount");
 
-    # Adding a new transaction via map should be replaced with TransactionModel
-    add_trans_old = """_transactions.insert(1, {
+  final addTransOld = '''_transactions.insert(1, {
                             'title': title,
                             'category': isIncome
                                 ? 'Ostali Prihodi'
@@ -456,9 +447,8 @@ class TransactionModel extends FinanceItem {
                                 ? Icons.account_balance_wallet
                                 : Icons.shopping_basket,
                             'color': isIncome ? Colors.green : Colors.redAccent,
-                          });"""
-                          
-    add_trans_new = """_transactions.insert(1, TransactionModel(
+                          });''';
+  final addTransNew = '''_transactions.insert(1, TransactionModel(
                             title: title,
                             category: isIncome
                                 ? 'Ostali Prihodi'
@@ -468,13 +458,8 @@ class TransactionModel extends FinanceItem {
                                 ? Icons.account_balance_wallet
                                 : Icons.shopping_basket,
                             color: isIncome ? Colors.green : Colors.redAccent,
-                          ));"""
-    content = content.replace(add_trans_old, add_trans_new)
+                          ));''';
+  content = content.replaceAll(addTransOld, addTransNew);
 
-    with open(filepath, 'w', encoding='utf-8') as f:
-        f.write(content)
-    
-if __name__ == "__main__":
-    filepath = r"c:/Users/jovan/Desktop/flutter_playground/lib/main.dart"
-    refactor_main_dart(filepath)
-    print("Done")
+  await file.writeAsString(content);
+}
