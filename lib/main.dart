@@ -3,29 +3,26 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:provider/provider.dart';
+// import 'package:provider/provider.dart'; // skontati kako ovo radi poslije
 
-// ---------------------------------------------------------
-// BAZNE KLASE & PROVIDER (Za pocetnike)
-// ---------------------------------------------------------
-abstract class BaseProvider extends ChangeNotifier {
-  bool _isLoading = false;
-  bool get isLoading => _isLoading;
-
-  void setLoading(bool value) {
-    _isLoading = value;
-    notifyListeners();
-  }
+void main() {
+  runApp(const MyApp());
 }
 
-class SettingsProvider extends BaseProvider {
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
   ThemeMode _themeMode = ThemeMode.system;
   double _fontSize = 16.0;
 
-  ThemeMode get themeMode => _themeMode;
-  double get fontSize => _fontSize;
-
-  SettingsProvider() {
+  @override
+  void initState() {
+    super.initState();
     _loadSettings();
   }
 
@@ -33,59 +30,46 @@ class SettingsProvider extends BaseProvider {
     final prefs = await SharedPreferences.getInstance();
     final isDark = prefs.getBool('isDarkMode') ?? false;
     final fontSize = prefs.getDouble('fontSize') ?? 16.0;
-    _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
-    _fontSize = fontSize;
-    notifyListeners();
+    setState(() {
+      _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+      _fontSize = fontSize;
+    });
   }
 
-  Future<void> changeTheme(ThemeMode mode) async {
+  Future<void> _changeTheme(ThemeMode mode) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isDarkMode', mode == ThemeMode.dark);
-    _themeMode = mode;
-    notifyListeners();
+    setState(() {
+      _themeMode = mode;
+    });
   }
 
-  Future<void> changeFontSize(double size) async {
+  Future<void> _changeFontSize(double size) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('fontSize', size);
-    _fontSize = size;
-    notifyListeners();
+    setState(() {
+      _fontSize = size;
+    });
   }
-}
-
-void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  runApp(
-    ChangeNotifierProvider(
-      create: (context) => SettingsProvider(),
-      child: const MyApp(),
-    ),
-  );
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final settings = context.watch<SettingsProvider>();
     return MaterialApp(
       title: 'Moj Flutter Playground',
       theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: Colors.deepPurple,
+        primarySwatch: Colors.deepPurple,
         textTheme: const TextTheme(
           displayLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-          bodyLarge: TextStyle(fontSize: 18),
+          bodyLarge: TextStyle(fontSize: 18, color: Colors.black87),
         ),
       ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: Colors.deepPurple,
-        brightness: Brightness.dark,
+      darkTheme: ThemeData.dark(),
+      themeMode: _themeMode,
+      home: MainMenuScreen(
+        onThemeChanged: _changeTheme,
+        fontSize: _fontSize,
+        onFontSizeChanged: _changeFontSize,
       ),
-      themeMode: settings.themeMode,
-      home: const MainMenuScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -95,7 +79,16 @@ class MyApp extends StatelessWidget {
 // MAIN MENU (Dodao nakon mjesec dana jer je bilo previse stvari)
 // ---------------------------------------------------------
 class MainMenuScreen extends StatefulWidget {
-  const MainMenuScreen({super.key});
+  final Function(ThemeMode) onThemeChanged;
+  final double fontSize;
+  final Function(double) onFontSizeChanged;
+
+  MainMenuScreen({
+    super.key,
+    required this.onThemeChanged,
+    required this.fontSize,
+    required this.onFontSizeChanged,
+  });
 
   @override
   State<MainMenuScreen> createState() => _MainMenuScreenState();
@@ -104,126 +97,112 @@ class MainMenuScreen extends StatefulWidget {
 class _MainMenuScreenState extends State<MainMenuScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = const [
-    CounterAppOld(), // moj prvi app
-    TodoListScreen(), // vjezbao liste
-    ApiTestScreen(), // ucio HTTP requeste (ubilo me)
-    AnimationPlayground(), // kul animacije
-    TipCalculatorScreen(), // Tip Calculator
-    FinanceDashboardScreen(), // NOVO: Finance Dashboard
-    SettingsScreen(), // settings
-  ];
+  late List<Widget> _screens;
 
-  Widget _buildDrawerItem({
-    required int index,
-    required IconData icon,
-    required String title,
-  }) {
-    final isSelected = _selectedIndex == index;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: ListTile(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        selected: isSelected,
-        selectedTileColor: Theme.of(context).colorScheme.primaryContainer,
-        leading: Icon(
-          icon,
-          color: isSelected ? Theme.of(context).colorScheme.primary : null,
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            color: isSelected ? Theme.of(context).colorScheme.primary : null,
-          ),
-        ),
-        onTap: () {
-          setState(() => _selectedIndex = index);
-          Navigator.pop(context);
-        },
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      const CounterAppOld(fontSize: 16.0), // moj prvi app
+      const TodoListScreen(fontSize: 16.0), // vjezbao liste
+      const ApiTestScreen(fontSize: 16.0), // ucio HTTP requeste (ubilo me)
+      const AnimationPlayground(fontSize: 16.0), // kul animacije
+      const FocusTimerScreen(fontSize: 16.0), // tajmer pomodoro
+      SettingsScreen(
+        onThemeChanged: widget.onThemeChanged,
+        onFontSizeChanged: widget.onFontSizeChanged,
+        fontSize: widget.fontSize,
+      ), // settings
+    ];
+  }
+
+  @override
+  void didUpdateWidget(MainMenuScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Rebuild screens kada se fontSize promijeni
+    _screens = [
+      CounterAppOld(fontSize: widget.fontSize),
+      TodoListScreen(fontSize: widget.fontSize),
+      ApiTestScreen(fontSize: widget.fontSize),
+      AnimationPlayground(fontSize: widget.fontSize),
+      FocusTimerScreen(fontSize: widget.fontSize),
+      SettingsScreen(
+        onThemeChanged: widget.onThemeChanged,
+        onFontSizeChanged: widget.onFontSizeChanged,
+        fontSize: widget.fontSize,
       ),
-    );
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Flutter Progress \uD83D\uDE80',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
-        elevation: 2,
-        shadowColor: Colors.black45,
+        title: const Text('Flutter 4 Months Progress \uD83D\uDE80'),
+        elevation: 10,
+        backgroundColor: Colors.deepPurpleAccent,
       ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             const UserAccountsDrawerHeader(
-              accountName: Text(
-                'Benjamin (Flutter Dev)',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-              accountEmail: Text(
-                'Benjamin.cero25@gmail.com',
-                style: TextStyle(color: Colors.white70),
-              ),
+              accountName: Text('Benjamin (Flutter Dev)'),
+              accountEmail: Text('Benjamin.cero25@gmail.com'),
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
-                child: Text(
-                  'B',
-                  style: TextStyle(
-                    fontSize: 28,
-                    color: Colors.deepPurple,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: Text('J', style: TextStyle(fontSize: 24)),
               ),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.deepPurple, Colors.indigo],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
+              decoration: BoxDecoration(color: Colors.deepPurpleAccent),
             ),
-            _buildDrawerItem(
-              index: 0,
-              icon: Icons.calculate,
-              title: '1. Old Counter App',
+            ListTile(
+              leading: const Icon(Icons.calculate),
+              title: const Text('1. Old Counter App'),
+              onTap: () {
+                setState(() => _selectedIndex = 0);
+                Navigator.pop(context);
+              },
             ),
-            _buildDrawerItem(
-              index: 1,
-              icon: Icons.list_alt,
-              title: '2. Todo List (State Test)',
+            ListTile(
+              leading: const Icon(Icons.list_alt),
+              title: const Text('2. Todo List (State Test)'),
+              onTap: () {
+                setState(() => _selectedIndex = 1);
+                Navigator.pop(context);
+              },
             ),
-            _buildDrawerItem(
-              index: 2,
-              icon: Icons.cloud_download,
-              title: '3. API Fetching (JSON)',
+            ListTile(
+              leading: const Icon(Icons.cloud_download),
+              title: const Text('3. API Fetching (JSON)'),
+              onTap: () {
+                setState(() => _selectedIndex = 2);
+                Navigator.pop(context);
+              },
             ),
-            _buildDrawerItem(
-              index: 3,
-              icon: Icons.animation,
-              title: '4. Animations & UI',
+            ListTile(
+              leading: const Icon(Icons.animation),
+              title: const Text('4. Animations & UI'),
+              onTap: () {
+                setState(() => _selectedIndex = 3);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.timer),
+              title: const Text('5. Pomodoro Tajmer ⏱️'),
+              onTap: () {
+                setState(() => _selectedIndex = 4);
+                Navigator.pop(context);
+              },
             ),
             const Divider(),
-            _buildDrawerItem(
-              index: 4,
-              icon: Icons.calculate,
-              title: '5. Tip Calculator 💰',
-            ),
-            _buildDrawerItem(
-              index: 5,
-              icon: Icons.account_balance_wallet,
-              title: '6. Finance Dashboard 📈',
-            ),
-            _buildDrawerItem(
-              index: 6,
-              icon: Icons.settings,
-              title: '7. Settings ⚙️',
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('6. Settings ⚙️'),
+              onTap: () {
+                setState(() => _selectedIndex = 5);
+                Navigator.pop(context);
+              },
             ),
           ],
         ),
@@ -275,7 +254,6 @@ class _CounterAppOldState extends State<CounterAppOld> {
 
   @override
   Widget build(BuildContext context) {
-    final fontSize = context.watch<SettingsProvider>().fontSize;
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -287,77 +265,50 @@ class _CounterAppOldState extends State<CounterAppOld> {
           ),
           const SizedBox(height: 20),
           Card(
-            elevation: 8,
-            shadowColor: Colors.deepPurple.withOpacity(0.4),
+            elevation: 5,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(15),
             ),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                gradient: LinearGradient(
-                  colors: [
-                    Theme.of(context).cardColor,
-                    Theme.of(
-                      context,
-                    ).colorScheme.primaryContainer.withOpacity(0.3),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 50.0,
-                  horizontal: 40.0,
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      'Brojač: $brojac',
-                      style: TextStyle(
-                        fontSize: fontSize + 16,
-                        color: farba,
-                        fontWeight: FontWeight.bold,
-                      ),
+            child: Padding(
+              padding: const EdgeInsets.all(40.0),
+              child: Column(
+                children: [
+                  Text(
+                    'Brojac: $brojac',
+                    style: TextStyle(
+                      fontSize: widget.fontSize + 12,
+                      color: farba,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        ElevatedButton(
-                          onPressed: _smanji,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.redAccent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            padding: const EdgeInsets.all(16),
-                          ),
-                          child: const Icon(Icons.remove, color: Colors.white),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton(
+                        onPressed: _smanji,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
                         ),
-                        ElevatedButton(
-                          onPressed: _povecaj,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            padding: const EdgeInsets.all(16),
-                          ),
-                          child: const Icon(Icons.add, color: Colors.white),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    if (brojac != 0) // if unutar builda! (naucio u mjesecu 2)
-                      TextButton.icon(
-                        onPressed: _resetuj,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Resetuj'),
+                        child: const Icon(Icons.remove, color: Colors.white),
                       ),
-                  ],
-                ),
+                      ElevatedButton(
+                        onPressed: _povecaj,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                        ),
+                        child: const Icon(Icons.add, color: Colors.white),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  if (brojac != 0) // if unutar builda! (naucio u mjesecu 2)
+                    TextButton.icon(
+                      onPressed: _resetuj,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Restuj'),
+                    ),
+                ],
               ),
             ),
           ),
@@ -385,8 +336,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
   List<Map<String, dynamic>> tasks = [
     {'title': 'Nauci stateless widgete', 'done': true},
     {'title': 'Nauci stateful widgete', 'done': true},
-    {'title': 'Skontaj kako radi Provider', 'done': true},
-    {'title': 'Nauci bazne klase (OOP)', 'done': true},
+    {'title': 'Skontaj kako radi Provider', 'done': true}, // TODO!
     {'title': 'Napravi portfolio aplikaciju', 'done': true},
   ];
 
@@ -401,30 +351,13 @@ class _TodoListScreenState extends State<TodoListScreen> {
   }
 
   void _deleteTask(int index) {
-    final deletedTask = tasks[index];
     setState(() {
       tasks.removeAt(index);
     });
-
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Zadatak izbrisan'),
-        action: SnackBarAction(
-          label: 'Poništi',
-          onPressed: () {
-            setState(() {
-              tasks.insert(index, deletedTask);
-            });
-          },
-        ),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final fontSize = context.watch<SettingsProvider>().fontSize;
     return Column(
       children: [
         Padding(
@@ -432,42 +365,20 @@ class _TodoListScreenState extends State<TodoListScreen> {
           child: Row(
             children: [
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: TextField(
-                    controller: _textController,
-                    decoration: InputDecoration(
-                      hintText: 'Unesi novi task...',
-                      filled: true,
-                      fillColor: Theme.of(context).cardColor,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 16,
-                      ),
+                child: TextField(
+                  controller: _textController,
+                  decoration: InputDecoration(
+                    hintText: 'Unesi novi task...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    onSubmitted: (_) => _addTask(),
                   ),
+                  onSubmitted: (_) => _addTask(),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               FloatingActionButton(
                 onPressed: _addTask,
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
                 child: const Icon(Icons.add),
               ),
             ],
@@ -488,24 +399,19 @@ class _TodoListScreenState extends State<TodoListScreen> {
                   child: const Icon(Icons.delete, color: Colors.white),
                 ),
                 direction: DismissDirection.endToStart,
-                onDismissed: (direction) => _deleteTask(index),
+                onDismissed: (direction) {
+                  _deleteTask(index);
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Izbrisan task')));
+                },
                 child: Card(
                   margin: const EdgeInsets.symmetric(
                     horizontal: 16,
-                    vertical: 6,
-                  ),
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    vertical: 4,
                   ),
                   child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 4,
-                    ),
                     leading: Checkbox(
-                      shape: const CircleBorder(),
-                      activeColor: Colors.deepPurple,
                       value: task['done'],
                       onChanged: (bool? value) {
                         setState(() {
@@ -516,19 +422,15 @@ class _TodoListScreenState extends State<TodoListScreen> {
                     title: Text(
                       task['title'],
                       style: TextStyle(
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.w500,
+                        fontSize: widget.fontSize,
                         decoration: task['done']
                             ? TextDecoration.lineThrough
-                            : null,
-                        color: task['done'] ? Colors.grey : null,
+                            : TextDecoration.none,
+                        color: task['done'] ? Colors.grey : Colors.black,
                       ),
                     ),
                     trailing: IconButton(
-                      icon: const Icon(
-                        Icons.delete_outline,
-                        color: Colors.redAccent,
-                      ),
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
                       onPressed: () => _deleteTask(index),
                     ),
                   ),
@@ -554,42 +456,13 @@ class ApiTestScreen extends StatefulWidget {
   State<ApiTestScreen> createState() => _ApiTestScreenState();
 }
 
-class UserModel {
-  final String firstName;
-  final String lastName;
-  final String email;
-  final String companyName;
-  final String department;
-  final String city;
-  final String address;
-
-  UserModel({
-    required this.firstName,
-    required this.lastName,
-    required this.email,
-    required this.companyName,
-    required this.department,
-    required this.city,
-    required this.address,
-  });
-
-  factory UserModel.fromJson(Map<String, dynamic> json) {
-    return UserModel(
-      firstName: json['firstName'] ?? '',
-      lastName: json['lastName'] ?? '',
-      email: json['email'] ?? '',
-      companyName: json['company']?['name'] ?? '',
-      department: json['company']?['department'] ?? '',
-      city: json['address']?['city'] ?? '',
-      address: json['address']?['address'] ?? '',
-    );
-  }
-}
-
 class _ApiTestScreenState extends State<ApiTestScreen> {
-  List<UserModel> _users = [];
+  List<dynamic> _users = [];
   bool _isLoading = false;
   String _errorMessage = '';
+
+  // Pokusao praviti model ali je previse komplikovano, koristim dynamic za sad
+  // class User { ... }
 
   @override
   void initState() {
@@ -605,12 +478,13 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
 
     try {
       // korisim jsonplaceholder jer je besplatan
-      final response = await http.get(Uri.parse('https://dummyjson.com/users'));
+      final response = await http.get(
+        Uri.parse('https://dummyjson.com/users'),
+      );
 
       if (response.statusCode == 200) {
         setState(() {
-          final List dynamicList = json.decode(response.body)['users'];
-          _users = dynamicList.map((data) => UserModel.fromJson(data)).toList();
+          _users = json.decode(response.body)['users']; // parsanje JSON-a
           _isLoading = false;
         });
       } else {
@@ -629,54 +503,8 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final fontSize = context.watch<SettingsProvider>().fontSize;
     return _isLoading
-        ? ListView.separated(
-            itemCount: 6,
-            separatorBuilder: (_, __) => const Divider(),
-            itemBuilder: (context, _) {
-              final baseColor = Theme.of(
-                context,
-              ).disabledColor.withOpacity(0.1);
-              final highlightColor = Theme.of(
-                context,
-              ).disabledColor.withOpacity(0.05);
-              return ListTile(
-                leading: CircleAvatar(radius: 25, backgroundColor: baseColor),
-                title: Container(
-                  height: 16,
-                  width: 150,
-                  decoration: BoxDecoration(
-                    color: baseColor,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  margin: const EdgeInsets.only(bottom: 8, right: 100),
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      height: 12,
-                      width: 200,
-                      decoration: BoxDecoration(
-                        color: highlightColor,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      margin: const EdgeInsets.only(bottom: 4),
-                    ),
-                    Container(
-                      height: 12,
-                      width: 120,
-                      decoration: BoxDecoration(
-                        color: highlightColor,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          )
+        ? const Center(child: CircularProgressIndicator())
         : _errorMessage.isNotEmpty
         ? Center(
             child: Column(
@@ -698,140 +526,44 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
               itemBuilder: (context, index) {
                 final user = _users[index];
                 return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 8,
-                  ),
                   leading: CircleAvatar(
-                    radius: 25,
-                    backgroundColor: Colors.deepPurple.withOpacity(0.15),
-                    child: Text(
-                      user.firstName.isNotEmpty ? user.firstName[0] : '?',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.deepPurple,
-                        fontSize: 20,
-                      ),
-                    ),
+                    backgroundColor: Colors.deepPurple[100],
+                    child: Text(user['firstName'][0]), // prvo slovo imena
                   ),
                   title: Text(
-                    '${user.firstName} ${user.lastName}',
+                    '${user['firstName']} ${user['lastName']}',
                     style: TextStyle(
-                      fontSize: fontSize + 2,
+                      fontSize: widget.fontSize,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Email: ${user.email}'),
+                      Text('Email: ${user['email']}'),
                       Text(
-                        'Firma: ${user.companyName}',
+                        'Firma: ${user['company']['name']}',
                         style: const TextStyle(fontStyle: FontStyle.italic),
                       ),
                     ],
                   ),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
-                    // Zamijenjeno sa lijepim BottomSheet-om umjesto obicnog dialoga!
-                    showModalBottomSheet(
+                    // Trebao bi napraviti detail screen ali nemam vremena
+                    showDialog(
                       context: context,
-                      isScrollControlled:
-                          true, // Popravlja problem sa overflowom
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(28),
+                      builder: (context) => AlertDialog(
+                        title: Text('${user['firstName']} ${user['lastName']}'),
+                        content: Text(
+                          "Radi u odjeljenju: ${user['company']['department']}",
                         ),
-                      ),
-                      builder: (context) {
-                        return SafeArea(
-                          child: SingleChildScrollView(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24.0,
-                                vertical: 16.0,
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 50,
-                                    height: 5,
-                                    margin: const EdgeInsets.only(bottom: 24),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[400],
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                  ),
-                                  CircleAvatar(
-                                    radius: 40,
-                                    backgroundColor: Colors.deepPurple[200],
-                                    child: Text(
-                                      '${user.firstName.isNotEmpty ? user.firstName[0] : ''}${user.lastName.isNotEmpty ? user.lastName[0] : ''}',
-                                      style: const TextStyle(
-                                        fontSize: 32,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    '${user.firstName} ${user.lastName}',
-                                    style: const TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    user.email,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                  const Divider(height: 32),
-                                  ListTile(
-                                    leading: const Icon(
-                                      Icons.work,
-                                      color: Colors.deepPurple,
-                                    ),
-                                    title: Text(user.companyName),
-                                    subtitle: Text(
-                                      'Odjeljenje: ${user.department}',
-                                    ),
-                                  ),
-                                  ListTile(
-                                    leading: const Icon(
-                                      Icons.location_on,
-                                      color: Colors.deepPurple,
-                                    ),
-                                    title: Text(user.city),
-                                    subtitle: Text(user.address),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      minimumSize: const Size(
-                                        double.infinity,
-                                        50,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                    onPressed: () => Navigator.pop(context),
-                                    child: const Text('Zatvori'),
-                                  ),
-                                  const SizedBox(
-                                    height: 8,
-                                  ), // Dodatni prostor na samom dnu ispod tipke
-                                ],
-                              ),
-                            ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('OK'),
                           ),
-                        );
-                      },
+                        ],
+                      ),
                     );
                   },
                 );
@@ -864,7 +596,6 @@ class _AnimationPlaygroundState extends State<AnimationPlayground>
 
   @override
   Widget build(BuildContext context) {
-    final fontSize = context.watch<SettingsProvider>().fontSize;
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -906,7 +637,7 @@ class _AnimationPlaygroundState extends State<AnimationPlayground>
                   child: Text(
                     _isExpanded ? 'Klikni me opet!' : 'Klikni me!',
                     style: TextStyle(
-                      fontSize: fontSize,
+                      fontSize: widget.fontSize,
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
@@ -941,28 +672,26 @@ class _AnimationPlaygroundState extends State<AnimationPlayground>
 
             const SizedBox(height: 40),
 
-            // Eksperimentisanje sa oblicima - uspješno dodan CustomClipper!
-            ClipPath(
-              clipper: WaveClipper(),
-              child: Container(
-                height: 150,
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.purple, Colors.blue],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+            // Eksperimentisanje sa oblicima (ClipPath - nasao na StackOverflowu)
+            // TODO: Skontati kako se pravi pravi CustomClipper
+            Container(
+              height: 150,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Colors.purple, Colors.blue],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                child: const Center(
-                  child: Text(
-                    'Wave Custom Clipper',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      fontStyle: FontStyle.italic,
-                    ),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Center(
+                child: Text(
+                  'Gradient Container',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontStyle: FontStyle.italic,
                   ),
                 ),
               ),
@@ -976,38 +705,229 @@ class _AnimationPlaygroundState extends State<AnimationPlayground>
   }
 }
 
-// CustomClipper klasa koju sam konačno skontao kako radi!
-class WaveClipper extends CustomClipper<Path> {
+// ---------------------------------------------------------
+// 5. POMODORO FOKUS TAJMER (Profesionalno i korisno)
+// ---------------------------------------------------------
+class FocusTimerScreen extends StatefulWidget {
+  final double fontSize;
+
+  const FocusTimerScreen({super.key, this.fontSize = 16.0});
+
   @override
-  Path getClip(Size size) {
-    var path = Path();
-    path.lineTo(0, size.height - 40);
-    path.quadraticBezierTo(
-      size.width / 4,
-      size.height,
-      size.width / 2,
-      size.height - 40,
+  State<FocusTimerScreen> createState() => _FocusTimerScreenState();
+}
+
+class _FocusTimerScreenState extends State<FocusTimerScreen> {
+  static const int workDuration = 25 * 60; // 25 minuta
+  static const int shortBreakDuration = 5 * 60; // 5 minuta
+  
+  int _timeLeft = workDuration;
+  bool _isRunning = false;
+  bool _isWorking = true;
+  int _completedPomodoros = 0;
+  Timer? _timer;
+
+  void _startTimer() {
+    if (_timer != null) {
+      _timer!.cancel();
+    }
+    setState(() {
+      _isRunning = true;
+    });
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        if (_timeLeft > 0) {
+          _timeLeft--;
+        } else {
+          _timer!.cancel();
+          _isRunning = false;
+          if (_isWorking) {
+            _completedPomodoros++;
+            _isWorking = false;
+            _timeLeft = shortBreakDuration;
+            _showCompletionDialog("Vrijeme za pauzu!", "Uspješno si fokusiran završio sesiju.");
+          } else {
+            _isWorking = true;
+            _timeLeft = workDuration;
+            _showCompletionDialog("Nazad na posao!", "Pauza je gotova, vrijeme je za novi fokus.");
+          }
+        }
+      });
+    });
+  }
+
+  void _pauseTimer() {
+    _timer?.cancel();
+    setState(() {
+      _isRunning = false;
+    });
+  }
+
+  void _resetTimer() {
+    _timer?.cancel();
+    setState(() {
+      _isRunning = false;
+      _isWorking = true;
+      _timeLeft = workDuration;
+    });
+  }
+
+  void _showCompletionDialog(String title, String content) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(content),
+          actions: <Widget>[
+            TextButton(
+              child: const Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
-    path.quadraticBezierTo(
-      size.width * 3 / 4,
-      size.height - 80,
-      size.width,
-      size.height - 40,
-    );
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
+  }
+
+  String _formatTime(int seconds) {
+    int minutes = seconds ~/ 60;
+    int remainingSeconds = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
   @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    double progress = _timeLeft / (_isWorking ? workDuration : shortBreakDuration);
+
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              _isWorking ? 'Sjajno posvećen fokus' : 'Vrijeme za odmor',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: _isWorking ? Colors.deepPurple : Colors.green,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Završeni ciklusi (Pomodoros): $_completedPomodoros',
+              style: TextStyle(
+                fontSize: widget.fontSize,
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.7) ?? Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 40),
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 250,
+                  height: 250,
+                  child: CircularProgressIndicator(
+                    value: progress,
+                    strokeWidth: 15,
+                    backgroundColor: Theme.of(context).disabledColor.withOpacity(0.1),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      _isWorking ? Colors.deepPurpleAccent : Colors.tealAccent.shade400,
+                    ),
+                  ),
+                ),
+                Text(
+                  _formatTime(_timeLeft),
+                  style: const TextStyle(
+                    fontSize: 55,
+                    fontWeight: FontWeight.w300,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 50),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: _isRunning ? _pauseTimer : _startTimer,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    backgroundColor: _isRunning ? Colors.orange : Colors.deepPurple,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    elevation: 5,
+                  ),
+                  child: Text(
+                    _isRunning ? 'Pauziraj' : 'Pokreni',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(width: 20),
+                OutlinedButton(
+                  onPressed: _resetTimer,
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    side: const BorderSide(color: Colors.redAccent, width: 2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  child: const Text(
+                    'Reset',
+                    style: TextStyle(fontSize: 18, color: Colors.redAccent),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 30),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.deepPurple.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: Colors.deepPurple.withOpacity(0.2)),
+              ),
+              child: Text(
+                'Tehnika Pomodoro uključuje radne periode od 25 minuta odvojene kratkim pauzama od 5 minuta. Povećava fokus i smanjuje umor.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: widget.fontSize - 2, fontStyle: FontStyle.italic),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ---------------------------------------------------------
-// 5. SETTINGS SCREEN (Konačno radi!)
+// 6. SETTINGS SCREEN (Konačno radi!)
 // ---------------------------------------------------------
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final Function(ThemeMode) onThemeChanged;
+  final Function(double) onFontSizeChanged;
+  final double fontSize;
+
+  const SettingsScreen({
+    super.key,
+    required this.onThemeChanged,
+    required this.onFontSizeChanged,
+    required this.fontSize,
+  });
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -1043,7 +963,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final fontSize = context.watch<SettingsProvider>().fontSize;
     if (!_isLoaded) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -1065,27 +984,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             // Tema selector
             Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
               child: Padding(
-                padding: const EdgeInsets.all(20.0),
+                padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.palette_outlined, color: Colors.deepPurple),
-                        SizedBox(width: 10),
-                        Text(
-                          'Tema',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ],
+                    const Text(
+                      'Tema',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 12),
                     RadioListTile<ThemeMode>(
@@ -1095,7 +1001,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onChanged: (ThemeMode? value) {
                         if (value != null) {
                           setState(() => _selectedTheme = value);
-                          context.read<SettingsProvider>().changeTheme(value);
+                          widget.onThemeChanged(value);
                         }
                       },
                     ),
@@ -1106,7 +1012,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onChanged: (ThemeMode? value) {
                         if (value != null) {
                           setState(() => _selectedTheme = value);
-                          context.read<SettingsProvider>().changeTheme(value);
+                          widget.onThemeChanged(value);
                         }
                       },
                     ),
@@ -1118,46 +1024,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             // Font size slider
             Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
               child: Padding(
-                padding: const EdgeInsets.all(20.0),
+                padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
-                      children: [
-                        Icon(
-                          Icons.text_fields_outlined,
-                          color: Colors.deepPurple,
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          'Veličina teksta',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ],
+                    const Text(
+                      'Veličina teksta',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 12),
                     Slider(
-                      value: fontSize,
+                      value: widget.fontSize,
                       min: 12,
                       max: 24,
                       divisions: 6,
-                      label: fontSize.toStringAsFixed(0),
+                      label: widget.fontSize.toStringAsFixed(0),
                       onChanged: (value) {
-                        context.read<SettingsProvider>().changeFontSize(value);
+                        widget.onFontSizeChanged(value);
                       },
                     ),
                     Center(
                       child: Text(
                         'Preview teksta',
-                        style: TextStyle(fontSize: fontSize),
+                        style: TextStyle(fontSize: widget.fontSize),
                       ),
                     ),
                   ],
@@ -1174,23 +1064,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
 
             Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
               child: SwitchListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 8,
-                ),
-                title: const Text(
-                  'Omogući notifikacije',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
+                title: const Text('Omogući notifikacije'),
                 subtitle: const Text('Primaj upozorenja iz aplikacije'),
                 value: _notificationsEnabled,
                 onChanged: _saveNotifications,
-                activeThumbColor: Colors.deepPurple,
               ),
             ),
             const SizedBox(height: 24),
@@ -1203,12 +1081,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
 
             Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
               child: Padding(
-                padding: const EdgeInsets.all(20.0),
+                padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1235,21 +1109,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
                       onPressed: () {
                         showDialog(
                           context: context,
                           builder: (context) => AlertDialog(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
                             title: const Text('O aplikaciji'),
                             content: const Text(
-                              'Ovo je moj playground za učenje Fluttera!\n\n'
+                              'Ovo je moj playground za učenje Fluatera!\n\n'
                               'Kroz 4 mjeseca naučio sam:\n'
                               '- Widgets (Stateless, Stateful)\n'
                               '- HTTP & JSON\n'
@@ -1275,918 +1141,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 32),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------
-// 6. TIP CALCULATOR SCREEN (Novi task za commit!)
-// ---------------------------------------------------------
-class TipCalculatorScreen extends StatefulWidget {
-  final double fontSize;
-
-  const TipCalculatorScreen({super.key, this.fontSize = 16.0});
-
-  @override
-  State<TipCalculatorScreen> createState() => _TipCalculatorScreenState();
-}
-
-class _TipCalculatorScreenState extends State<TipCalculatorScreen> {
-  final TextEditingController _amountController = TextEditingController();
-  double _tipPercentage = 10.0;
-  double _tipAmount = 0.0;
-  double _totalAmount = 0.0;
-  int _splitCount = 1;
-
-  void _calculateTip() {
-    double billAmount = double.tryParse(_amountController.text) ?? 0.0;
-    setState(() {
-      _tipAmount = billAmount * (_tipPercentage / 100);
-      _totalAmount = billAmount + _tipAmount;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final fontSize = context.watch<SettingsProvider>().fontSize;
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Napojnica i Račun 😎',
-              style: TextStyle(
-                fontSize: fontSize + 4,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            Container(
-              decoration: BoxDecoration(
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.primary.withOpacity(0.05),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: TextField(
-                controller: _amountController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: InputDecoration(
-                  labelText: 'Ukupan iznos računa (KM)',
-                  labelStyle: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
-                  prefixIcon: Icon(
-                    Icons.receipt_long,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  filled: true,
-                  fillColor: Theme.of(context).cardColor,
-                ),
-                onChanged: (value) => _calculateTip(),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Napojnica:',
-                  style: TextStyle(
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${_tipPercentage.toInt()}%',
-                    style: TextStyle(
-                      fontSize: fontSize,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Slider(
-              value: _tipPercentage,
-              min: 0,
-              max: 30,
-              divisions: 6,
-              activeColor: Theme.of(context).colorScheme.primary,
-              onChanged: (value) {
-                setState(() {
-                  _tipPercentage = value;
-                  _calculateTip();
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Broj osoba (Split):',
-                  style: TextStyle(
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.secondary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '$_splitCount',
-                    style: TextStyle(
-                      fontSize: fontSize,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Slider(
-              value: _splitCount.toDouble(),
-              min: 1,
-              max: 10,
-              divisions: 9,
-              activeColor: Theme.of(context).colorScheme.secondary,
-              onChanged: (value) {
-                setState(() {
-                  _splitCount = value.toInt();
-                });
-              },
-            ),
-            const SizedBox(height: 28),
-            Card(
-              elevation: 8,
-              shadowColor: Theme.of(
-                context,
-              ).colorScheme.primary.withOpacity(0.5),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  gradient: LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.primary,
-                      Theme.of(context).colorScheme.secondary,
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(28.0),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Samo napojnica:',
-                            style: TextStyle(
-                              fontSize: fontSize,
-                              color: Colors.white70,
-                            ),
-                          ),
-                          Text(
-                            '${_tipAmount.toStringAsFixed(2)} KM',
-                            style: TextStyle(
-                              fontSize: fontSize,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: Divider(color: Colors.white30, height: 1),
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Ukupno:',
-                            style: TextStyle(
-                              fontSize: fontSize + 2,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white,
-                            ),
-                          ),
-                          Text(
-                            '${_totalAmount.toStringAsFixed(2)} KM',
-                            style: TextStyle(
-                              fontSize: fontSize + 4,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (_splitCount > 1) ...[
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                          child: Divider(color: Colors.white30, height: 1),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.group,
-                                  color: Colors.white70,
-                                  size: 24,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Po osobi:',
-                                  style: TextStyle(
-                                    fontSize: fontSize + 2,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Text(
-                              '${(_totalAmount / _splitCount).toStringAsFixed(2)} KM',
-                              style: TextStyle(
-                                fontSize: fontSize + 6,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------
-// BAZNE KLASE ZA MODELE
-// ---------------------------------------------------------
-abstract class FinanceItem {
-  final String title;
-  final double amount;
-  final String category;
-
-  FinanceItem({
-    required this.title,
-    required this.amount,
-    required this.category,
-  });
-
-  bool get isIncome => amount > 0;
-}
-
-class TransactionModel extends FinanceItem {
-  final IconData icon;
-  final Color color;
-
-  TransactionModel({
-    required super.title,
-    required super.amount,
-    required super.category,
-    required this.icon,
-    required this.color,
-  });
-}
-
-// ---------------------------------------------------------
-// 7. FINANCE DASHBOARD (Portfolio / Posao ready UI)
-// ---------------------------------------------------------
-class FinanceDashboardScreen extends StatefulWidget {
-  final double fontSize;
-
-  const FinanceDashboardScreen({super.key, this.fontSize = 16.0});
-
-  @override
-  State<FinanceDashboardScreen> createState() => _FinanceDashboardScreenState();
-}
-
-class _FinanceDashboardScreenState extends State<FinanceDashboardScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-
-  double get fontSize => context.read<SettingsProvider>().fontSize;
-
-  // Mock podaci za transakcije koristeci nasu novu TransactionModel klasu
-  final List<TransactionModel> _transactions = [
-    TransactionModel(
-      title: 'Početno stanje',
-      category: 'Ušteđevina',
-      amount: 3794.19,
-      icon: Icons.account_balance,
-      color: Colors.teal,
-    ),
-    TransactionModel(
-      title: 'Dribbble Pro',
-      category: 'Pretplata',
-      amount: -15.00,
-      icon: Icons.design_services,
-      color: Colors.pink,
-    ),
-    TransactionModel(
-      title: 'Plata (Freelance)',
-      category: 'Prihod',
-      amount: 1250.00,
-      icon: Icons.work_outline,
-      color: Colors.green,
-    ),
-    TransactionModel(
-      title: 'Kafa sa klijentom',
-      category: 'Hrana & Piće',
-      amount: -8.50,
-      icon: Icons.local_cafe,
-      color: Colors.orange,
-    ),
-    TransactionModel(
-      title: 'Supermarket',
-      category: 'Namirnice',
-      amount: -145.20,
-      icon: Icons.shopping_cart,
-      color: Colors.blue,
-    ),
-    TransactionModel(
-      title: 'Udemy Kurs',
-      category: 'Edukacija',
-      amount: -24.99,
-      icon: Icons.menu_book,
-      color: Colors.purple,
-    ),
-  ];
-
-  double get _totalBalance =>
-      _transactions.fold(0.0, (sum, item) => sum + item.amount);
-  double get _totalIncome => _transactions
-      .where((item) => item.amount > 0)
-      .fold(0.0, (sum, item) => sum + item.amount);
-  double get _totalExpense => _transactions
-      .where((item) => item.amount < 0)
-      .fold(0.0, (sum, item) => sum + item.amount);
-
-  @override
-  void initState() {
-    super.initState();
-    // Animacija koja se pokrene cim se ucita ekran - profesionalni dojam
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
-
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.2),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutQuart));
-
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose(); // Vrlo bitno za otpustanje memorije
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final fontSize = context.watch<SettingsProvider>().fontSize;
-    return Stack(
-      children: [
-        SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 20.0,
-              vertical: 16.0,
-            ),
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 1. HEADER SEKCIJA (Balance Card)
-                  SlideTransition(
-                    position: _slideAnimation,
-                    child: _buildBalanceCard(context),
-                  ),
-                  const SizedBox(height: 28),
-
-                  // 2. BRZE AKCIJE (Quick Actions)
-                  SlideTransition(
-                    position: _slideAnimation,
-                    child: _buildQuickActions(),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // 3. NEDAVNE TRANSAKCIJE (Recent Transactions)
-                  Text(
-                    'Nedavne Transakcije',
-                    style: TextStyle(
-                      fontSize: fontSize + 2,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ..._transactions.map((tx) {
-                    return SlideTransition(
-                      position: _slideAnimation,
-                      child: _buildTransactionTile(tx),
-                    );
-                  }),
-                  const SizedBox(height: 20),
-                ],
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          bottom: 24,
-          right: 24,
-          child: FloatingActionButton(
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            foregroundColor: Colors.white,
-            onPressed: () => _showAddTransactionDialog(context),
-            child: const Icon(Icons.add),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // --- IZDVOJENE METODE ZA CISTIJI KOD (Clean Code princip) ---
-
-  Widget _buildBalanceCard(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24.0),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
-          colors: [Colors.deepPurpleAccent, Colors.indigo],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.deepPurple.withOpacity(0.4),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Ukupan Balans',
-            style: TextStyle(color: Colors.white70, fontSize: 16),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '\$ ${_totalBalance.toStringAsFixed(2)}',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: fontSize + 22,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildIncomeExpenseRow(
-                Icons.arrow_downward,
-                'Prihodi',
-                '\$ ${_totalIncome.toStringAsFixed(0)}',
-                Colors.greenAccent,
-              ),
-              _buildIncomeExpenseRow(
-                Icons.arrow_upward,
-                'Rashodi',
-                '\$ ${_totalExpense.abs().toStringAsFixed(2)}',
-                Colors.redAccent,
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          _buildProgressBar(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProgressBar() {
-    if (_totalIncome == 0 && _totalExpense == 0) return const SizedBox.shrink();
-    final totalAmount = _totalIncome + _totalExpense.abs();
-    final incomePercentage = totalAmount > 0 ? _totalIncome / totalAmount : 0.0;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Odnos Prihoda i Rashoda',
-          style: TextStyle(color: Colors.white54, fontSize: 11),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          height: 8,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            color: Colors.white.withOpacity(0.2),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: (incomePercentage * 100).toInt() > 0
-                      ? (incomePercentage * 100).toInt()
-                      : 1,
-                  child: Container(color: Colors.greenAccent),
-                ),
-                Expanded(
-                  flex: ((1 - incomePercentage) * 100).toInt() > 0
-                      ? ((1 - incomePercentage) * 100).toInt()
-                      : 1,
-                  child: Container(color: Colors.redAccent),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildIncomeExpenseRow(
-    IconData icon,
-    String label,
-    String amount,
-    Color iconColor,
-  ) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: iconColor, size: 20),
-        ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              amount,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuickActions() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        _buildActionBtn(Icons.send, 'Pošalji'),
-        _buildActionBtn(Icons.account_balance_wallet, 'Računi'),
-        _buildActionBtn(Icons.pie_chart, 'Statistika'),
-        _buildActionBtn(Icons.more_horiz, 'Više'),
-      ],
-    );
-  }
-
-  Widget _buildActionBtn(IconData icon, String label) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Icon(
-            icon,
-            color: Theme.of(context).colorScheme.primary,
-            size: 28,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          label,
-          style: TextStyle(fontSize: fontSize - 4, fontWeight: FontWeight.w600),
-        ),
-      ],
-    );
-  }
-
-  void _deleteTransaction(TransactionModel tx) {
-    final index = _transactions.indexOf(tx);
-    if (index == -1) return;
-
-    setState(() {
-      _transactions.removeAt(index);
-    });
-
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Transakcija izbrisana'),
-        action: SnackBarAction(
-          label: 'Poništi',
-          onPressed: () {
-            setState(() {
-              _transactions.insert(index, tx);
-            });
-          },
-        ),
-      ),
-    );
-  }
-
-  void _showAddTransactionDialog(BuildContext context) {
-    final titleController = TextEditingController();
-    final amountController = TextEditingController();
-    bool isIncome = false;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-                left: 24,
-                right: 24,
-                top: 24,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Nova transakcija',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: titleController,
-                    decoration: InputDecoration(
-                      labelText: 'Naziv (npr. Plata, Kafa)',
-                      filled: true,
-                      fillColor: Theme.of(context).cardColor,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: amountController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: 'Iznos',
-                      filled: true,
-                      fillColor: Theme.of(context).cardColor,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
-                      ),
-                      prefixText: '\$ ',
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Tip transakcije:',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      ToggleButtons(
-                        borderRadius: BorderRadius.circular(12),
-                        fillColor: isIncome
-                            ? Colors.green.withOpacity(0.15)
-                            : Colors.red.withOpacity(0.15),
-                        selectedColor: isIncome ? Colors.green : Colors.red,
-                        isSelected: [isIncome, !isIncome],
-                        onPressed: (index) {
-                          setModalState(() {
-                            isIncome = index == 0;
-                          });
-                        },
-                        children: const [
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              children: [
-                                Icon(Icons.arrow_downward, size: 16),
-                                SizedBox(width: 4),
-                                Text('Prihod'),
-                              ],
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              children: [
-                                Icon(Icons.arrow_upward, size: 16),
-                                SizedBox(width: 4),
-                                Text('Rashod'),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () {
-                      final title = titleController.text;
-                      final amountText = amountController.text.replaceAll(
-                        ',',
-                        '.',
-                      );
-                      final amount = double.tryParse(amountText) ?? 0.0;
-
-                      if (title.isNotEmpty && amount > 0) {
-                        setState(() {
-                          _transactions.insert(
-                            1,
-                            TransactionModel(
-                              title: title,
-                              category: isIncome
-                                  ? 'Ostali Prihodi'
-                                  : 'Ostali Rashodi',
-                              amount: isIncome ? amount : -amount,
-                              icon: isIncome
-                                  ? Icons.account_balance_wallet
-                                  : Icons.shopping_basket,
-                              color: isIncome ? Colors.green : Colors.redAccent,
-                            ),
-                          );
-                        });
-                        Navigator.pop(context);
-                      }
-                    },
-                    child: const Text('Dodaj transakciju'),
-                  ),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildTransactionTile(TransactionModel tx) {
-    final bool isIncome = tx.isIncome;
-    return Dismissible(
-      key: UniqueKey(),
-      background: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: Colors.redAccent,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 24),
-        child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
-      ),
-      direction: DismissDirection.endToStart,
-      onDismissed: (_) => _deleteTransaction(tx),
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        elevation: 0,
-        color: Theme.of(context).cardColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.grey.withOpacity(0.1)),
-        ),
-        child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          leading: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: tx.color.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(tx.icon, color: tx.color),
-          ),
-          title: Text(
-            tx.title,
-            style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold),
-          ),
-          subtitle: Text(tx.category, style: TextStyle(fontSize: fontSize - 4)),
-          trailing: Text(
-            isIncome
-                ? '+ \$${tx.amount.toStringAsFixed(2)}'
-                : '- \$${tx.amount.abs().toStringAsFixed(2)}',
-            style: TextStyle(
-              color: isIncome ? Colors.green : Colors.red,
-              fontWeight: FontWeight.bold,
-              fontSize: fontSize,
-            ),
-          ),
         ),
       ),
     );
